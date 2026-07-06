@@ -250,9 +250,6 @@ function StoryCanvasApp() {
                   AI Assistant
                 </SheetTitle>
               </SheetHeader>
-              <button onClick={() => setAiOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-muted" aria-label="Close">
-                <X className="h-4 w-4" />
-              </button>
             </div>
 
             {/* Mode chips */}
