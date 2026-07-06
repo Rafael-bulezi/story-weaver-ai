@@ -32,13 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import {
-  useLore,
-  useStory,
-  loreToPrompt,
-  type LoreItem,
-  type LoreType,
-} from "@/lib/story-store";
+import { useLore, useStory, loreToPrompt, type LoreItem, type LoreType } from "@/lib/story-store";
 import { invokeAssistant } from "@/lib/ai.functions";
 
 export const Route = createFileRoute("/")({
@@ -46,7 +40,11 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { property: "og:title", content: "Story Canvas — Write worlds that remember themselves" },
-      { property: "og:description", content: "A pocket-sized AI storytelling workspace with living world memory, critic mode, and alternate-direction debate." },
+      {
+        property: "og:description",
+        content:
+          "A pocket-sized AI storytelling workspace with living world memory, critic mode, and alternate-direction debate.",
+      },
     ],
   }),
 });
@@ -67,12 +65,51 @@ const MODES: { id: Mode; label: string; sub: string; icon: typeof Feather; color
   { id: "debater", label: "Debater", sub: "Challenge ideas", icon: Scale, color: "debater" },
 ];
 
-const QUICK_ACTIONS: { label: string; hint: string; mode: Mode; action: string; icon: typeof Feather }[] = [
-  { label: "Continue", hint: "Write next part", mode: "writer", action: "Continue the scene naturally from where it ends. Keep tone and pacing consistent.", icon: Feather },
-  { label: "Describe", hint: "Add more detail", mode: "writer", action: "Rewrite the last paragraph with more sensory detail — sight, sound, texture, temperature — without changing what happens.", icon: Sparkles },
-  { label: "Critic Check", hint: "Spot plot holes", mode: "critic", action: "Review the current scene for plot holes, unclear motivation, or continuity gaps against the world lore.", icon: ScanSearch },
-  { label: "Debate", hint: "Explore alternatives", mode: "debater", action: "Propose bold alternate directions the story could take from this exact point.", icon: Scale },
-  { label: "Save to Lore", hint: "Extract entities", mode: "writer", action: "Read the current scene and extract any new characters, places, or concepts worth adding to the world lore. Return as a compact bulleted list: TYPE — NAME — one-line description.", icon: BookmarkPlus },
+const QUICK_ACTIONS: {
+  label: string;
+  hint: string;
+  mode: Mode;
+  action: string;
+  icon: typeof Feather;
+}[] = [
+  {
+    label: "Continue",
+    hint: "Write next part",
+    mode: "writer",
+    action: "Continue the scene naturally from where it ends. Keep tone and pacing consistent.",
+    icon: Feather,
+  },
+  {
+    label: "Describe",
+    hint: "Add more detail",
+    mode: "writer",
+    action:
+      "Rewrite the last paragraph with more sensory detail — sight, sound, texture, temperature — without changing what happens.",
+    icon: Sparkles,
+  },
+  {
+    label: "Critic Check",
+    hint: "Spot plot holes",
+    mode: "critic",
+    action:
+      "Review the current scene for plot holes, unclear motivation, or continuity gaps against the world lore.",
+    icon: ScanSearch,
+  },
+  {
+    label: "Debate",
+    hint: "Explore alternatives",
+    mode: "debater",
+    action: "Propose bold alternate directions the story could take from this exact point.",
+    icon: Scale,
+  },
+  {
+    label: "Save to Lore",
+    hint: "Extract entities",
+    mode: "writer",
+    action:
+      "Read the current scene and extract any new characters, places, or concepts worth adding to the world lore. Return as a compact bulleted list: TYPE — NAME — one-line description.",
+    icon: BookmarkPlus,
+  },
 ];
 
 function StoryCanvasApp() {
@@ -91,7 +128,11 @@ function StoryCanvasApp() {
     [story.content],
   );
 
-  async function run(mode: Mode | "chat", action: string, options?: { openPanel?: boolean; userPrompt?: string; busyKey?: string }) {
+  async function run(
+    mode: Mode | "chat",
+    action: string,
+    options?: { openPanel?: boolean; userPrompt?: string; busyKey?: string },
+  ) {
     const busyKey = options?.busyKey ?? `${mode}:${action.slice(0, 24)}`;
     setBusy(busyKey);
     if (options?.openPanel !== false) setAiOpen(true);
@@ -105,9 +146,8 @@ function StoryCanvasApp() {
           userPrompt: options?.userPrompt ?? "",
         },
       });
-      const label = mode === "chat"
-        ? "Assistant"
-        : MODES.find((m) => m.id === mode)?.label ?? "Assistant";
+      const label =
+        mode === "chat" ? "Assistant" : (MODES.find((m) => m.id === mode)?.label ?? "Assistant");
       setMessages((prev) => [
         { id: `m${Date.now()}`, mode, label, content: content.trim(), createdAt: Date.now() },
         ...prev,
@@ -148,7 +188,10 @@ function StoryCanvasApp() {
         <div className="flex items-center gap-2 py-3">
           <Sheet open={loreOpen} onOpenChange={setLoreOpen}>
             <SheetTrigger asChild>
-              <button className="-ml-1 flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-muted" aria-label="Open world">
+              <button
+                className="-ml-1 flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-muted"
+                aria-label="Open world"
+              >
                 <BookOpen className="h-5 w-5" />
               </button>
             </SheetTrigger>
@@ -172,7 +215,10 @@ function StoryCanvasApp() {
             <Sparkles className="h-3.5 w-3.5" />
             Assistant
           </button>
-          <button className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-muted" aria-label="More">
+          <button
+            className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-muted"
+            aria-label="More"
+          >
             <MoreHorizontal className="h-5 w-5" />
           </button>
         </div>
@@ -220,13 +266,20 @@ function StoryCanvasApp() {
                   busy && !isBusy && "opacity-50",
                 )}
               >
-                <span className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-xl",
-                  a.mode === "writer" && "bg-[color:var(--writer-bg)] text-[color:var(--writer)]",
-                  a.mode === "critic" && "bg-[color:var(--critic-bg)] text-[color:var(--critic)]",
-                  a.mode === "debater" && "bg-[color:var(--debater-bg)] text-[color:var(--debater)]",
-                )}>
-                  {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Icon className="h-4 w-4" />}
+                <span
+                  className={cn(
+                    "flex h-8 w-8 items-center justify-center rounded-xl",
+                    a.mode === "writer" && "bg-[color:var(--writer-bg)] text-[color:var(--writer)]",
+                    a.mode === "critic" && "bg-[color:var(--critic-bg)] text-[color:var(--critic)]",
+                    a.mode === "debater" &&
+                      "bg-[color:var(--debater-bg)] text-[color:var(--debater)]",
+                  )}
+                >
+                  {isBusy ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Icon className="h-4 w-4" />
+                  )}
                 </span>
                 <span className="flex flex-col leading-tight">
                   <span className="text-[13px] font-semibold">{a.label}</span>
@@ -275,23 +328,34 @@ function StoryCanvasApp() {
                   >
                     <div className="flex items-center gap-1.5">
                       {isBusy ? (
-                        <Loader2 className={cn("h-3.5 w-3.5 animate-spin",
-                          m.id === "writer" && "text-[color:var(--writer)]",
-                          m.id === "critic" && "text-[color:var(--critic)]",
-                          m.id === "debater" && "text-[color:var(--debater)]",
-                        )} />
+                        <Loader2
+                          className={cn(
+                            "h-3.5 w-3.5 animate-spin",
+                            m.id === "writer" && "text-[color:var(--writer)]",
+                            m.id === "critic" && "text-[color:var(--critic)]",
+                            m.id === "debater" && "text-[color:var(--debater)]",
+                          )}
+                        />
                       ) : (
-                        <Icon className={cn("h-3.5 w-3.5",
+                        <Icon
+                          className={cn(
+                            "h-3.5 w-3.5",
+                            m.id === "writer" && "text-[color:var(--writer)]",
+                            m.id === "critic" && "text-[color:var(--critic)]",
+                            m.id === "debater" && "text-[color:var(--debater)]",
+                          )}
+                        />
+                      )}
+                      <span
+                        className={cn(
+                          "text-[13px] font-semibold",
                           m.id === "writer" && "text-[color:var(--writer)]",
                           m.id === "critic" && "text-[color:var(--critic)]",
                           m.id === "debater" && "text-[color:var(--debater)]",
-                        )} />
-                      )}
-                      <span className={cn("text-[13px] font-semibold",
-                        m.id === "writer" && "text-[color:var(--writer)]",
-                        m.id === "critic" && "text-[color:var(--critic)]",
-                        m.id === "debater" && "text-[color:var(--debater)]",
-                      )}>{m.label}</span>
+                        )}
+                      >
+                        {m.label}
+                      </span>
                     </div>
                     <span className="text-[10.5px] text-muted-foreground">{m.sub}</span>
                   </button>
@@ -312,7 +376,9 @@ function StoryCanvasApp() {
                   message={m}
                   onInsert={() => insertIntoStory(m.content)}
                   onReplace={() => {
-                    update({ content: story.content.replace(/\s*$/, "") + `\n\n${m.content.trim()}` });
+                    update({
+                      content: story.content.replace(/\s*$/, "") + `\n\n${m.content.trim()}`,
+                    });
                     toast.success("Appended to scene");
                     setAiOpen(false);
                   }}
@@ -346,7 +412,11 @@ function StoryCanvasApp() {
                   className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-40"
                   aria-label="Send"
                 >
-                  {busy === "chat" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                  {busy === "chat" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-3.5 w-3.5" />
+                  )}
                 </button>
               </form>
             </div>
@@ -372,8 +442,8 @@ function AssistantCard({
     message.mode === "critic"
       ? { bg: "bg-[color:var(--critic-bg)]", text: "text-[color:var(--critic)]", icon: ScanSearch }
       : message.mode === "debater"
-      ? { bg: "bg-[color:var(--debater-bg)]", text: "text-[color:var(--debater)]", icon: Scale }
-      : { bg: "bg-[color:var(--writer-bg)]", text: "text-[color:var(--writer)]", icon: Feather };
+        ? { bg: "bg-[color:var(--debater-bg)]", text: "text-[color:var(--debater)]", icon: Scale }
+        : { bg: "bg-[color:var(--writer-bg)]", text: "text-[color:var(--writer)]", icon: Feather };
   const Icon = tone.icon;
   return (
     <div className={cn("rounded-2xl p-4", tone.bg)}>
@@ -385,13 +455,28 @@ function AssistantCard({
         {message.content}
       </p>
       <div className="mt-3 flex flex-wrap gap-1.5">
-        <Button size="sm" variant="secondary" className="h-7 rounded-full bg-white/70 px-2.5 text-[11px] hover:bg-white" onClick={onInsert}>
+        <Button
+          size="sm"
+          variant="secondary"
+          className="h-7 rounded-full bg-white/70 px-2.5 text-[11px] hover:bg-white"
+          onClick={onInsert}
+        >
           <ArrowRight className="mr-1 h-3 w-3" /> Insert
         </Button>
-        <Button size="sm" variant="secondary" className="h-7 rounded-full bg-white/70 px-2.5 text-[11px] hover:bg-white" onClick={onReplace}>
+        <Button
+          size="sm"
+          variant="secondary"
+          className="h-7 rounded-full bg-white/70 px-2.5 text-[11px] hover:bg-white"
+          onClick={onReplace}
+        >
           <Replace className="mr-1 h-3 w-3" /> Append
         </Button>
-        <Button size="sm" variant="secondary" className="h-7 rounded-full bg-white/70 px-2.5 text-[11px] hover:bg-white" onClick={onCopy}>
+        <Button
+          size="sm"
+          variant="secondary"
+          className="h-7 rounded-full bg-white/70 px-2.5 text-[11px] hover:bg-white"
+          onClick={onCopy}
+        >
           <Copy className="mr-1 h-3 w-3" /> Copy
         </Button>
       </div>
@@ -401,8 +486,16 @@ function AssistantCard({
 
 function LoreSheet({ lore }: { lore: ReturnType<typeof useLore> }) {
   const [active, setActive] = useState<LoreType>("character");
-  const [draft, setDraft] = useState<{ open: boolean; name: string; role: string; description: string }>({
-    open: false, name: "", role: "", description: "",
+  const [draft, setDraft] = useState<{
+    open: boolean;
+    name: string;
+    role: string;
+    description: string;
+  }>({
+    open: false,
+    name: "",
+    role: "",
+    description: "",
   });
 
   const filtered = lore.items.filter((i) => i.type === active);
@@ -424,11 +517,21 @@ function LoreSheet({ lore }: { lore: ReturnType<typeof useLore> }) {
           </div>
         </SheetHeader>
 
-        <Tabs value={active} onValueChange={(v) => setActive(v as LoreType)} className="flex flex-1 flex-col overflow-hidden px-3">
+        <Tabs
+          value={active}
+          onValueChange={(v) => setActive(v as LoreType)}
+          className="flex flex-1 flex-col overflow-hidden px-3"
+        >
           <TabsList className="mx-2 grid w-auto grid-cols-3 rounded-full bg-muted p-1">
-            <TabsTrigger value="character" className="rounded-full text-xs">Characters</TabsTrigger>
-            <TabsTrigger value="place" className="rounded-full text-xs">Places</TabsTrigger>
-            <TabsTrigger value="concept" className="rounded-full text-xs">Concepts</TabsTrigger>
+            <TabsTrigger value="character" className="rounded-full text-xs">
+              Characters
+            </TabsTrigger>
+            <TabsTrigger value="place" className="rounded-full text-xs">
+              Places
+            </TabsTrigger>
+            <TabsTrigger value="concept" className="rounded-full text-xs">
+              Concepts
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value={active} className="mt-3 flex-1 overflow-y-auto px-2 pb-4">
@@ -440,7 +543,13 @@ function LoreSheet({ lore }: { lore: ReturnType<typeof useLore> }) {
                   onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
                 />
                 <Input
-                  placeholder={active === "character" ? "Role (e.g. Protagonist)" : active === "place" ? "Kind (e.g. City)" : "Category"}
+                  placeholder={
+                    active === "character"
+                      ? "Role (e.g. Protagonist)"
+                      : active === "place"
+                        ? "Kind (e.g. City)"
+                        : "Category"
+                  }
                   value={draft.role}
                   onChange={(e) => setDraft((d) => ({ ...d, role: e.target.value }))}
                 />
@@ -451,14 +560,23 @@ function LoreSheet({ lore }: { lore: ReturnType<typeof useLore> }) {
                   onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
                 />
                 <div className="flex justify-end gap-2">
-                  <Button size="sm" variant="ghost" onClick={() => setDraft({ open: false, name: "", role: "", description: "" })}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setDraft({ open: false, name: "", role: "", description: "" })}
+                  >
                     Cancel
                   </Button>
                   <Button
                     size="sm"
                     disabled={!draft.name.trim()}
                     onClick={() => {
-                      lore.add({ type: active, name: draft.name.trim(), role: draft.role.trim() || undefined, description: draft.description.trim() });
+                      lore.add({
+                        type: active,
+                        name: draft.name.trim(),
+                        role: draft.role.trim() || undefined,
+                        description: draft.description.trim(),
+                      });
                       setDraft({ open: false, name: "", role: "", description: "" });
                       toast.success("Added to world");
                     }}
@@ -472,7 +590,9 @@ function LoreSheet({ lore }: { lore: ReturnType<typeof useLore> }) {
             <div className="space-y-2">
               {filtered.length === 0 && !draft.open && (
                 <div className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                  Nothing here yet.<br />Tap <span className="font-semibold">Add</span> to build your world.
+                  Nothing here yet.
+                  <br />
+                  Tap <span className="font-semibold">Add</span> to build your world.
                 </div>
               )}
               {filtered.map((item) => (
@@ -499,12 +619,18 @@ function LoreRow({ item, onDelete }: { item: LoreItem; onDelete: () => void }) {
             <div className="truncate text-sm font-semibold">{item.name}</div>
             {item.role && <div className="text-[11px] text-muted-foreground">{item.role}</div>}
           </div>
-          <button onClick={onDelete} className="opacity-40 transition hover:opacity-100" aria-label="Delete">
+          <button
+            onClick={onDelete}
+            className="opacity-40 transition hover:opacity-100"
+            aria-label="Delete"
+          >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>
         {item.description && (
-          <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted-foreground">{item.description}</p>
+          <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted-foreground">
+            {item.description}
+          </p>
         )}
       </div>
     </div>

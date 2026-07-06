@@ -27,10 +27,35 @@ const DEFAULT_STORY: Story = {
 };
 
 const DEFAULT_LORE: LoreItem[] = [
-  { id: "l1", type: "character", name: "Zeal", role: "Protagonist", description: "A Dawnborn who manipulates cyan light. Searching for the truth behind the Fracture." },
-  { id: "l2", type: "character", name: "Nyra", role: "Rogue Seer", description: "Sees fragments of futures the Spire tries to erase." },
-  { id: "l3", type: "place", name: "The Spire", role: "Location", description: "A governing spine cutting through Astrisol's upper haze." },
-  { id: "l4", type: "concept", name: "Aetherlight", role: "Power / Energy", description: "The engineered luminance that structures every path in Astrisol." },
+  {
+    id: "l1",
+    type: "character",
+    name: "Zeal",
+    role: "Protagonist",
+    description:
+      "A Dawnborn who manipulates cyan light. Searching for the truth behind the Fracture.",
+  },
+  {
+    id: "l2",
+    type: "character",
+    name: "Nyra",
+    role: "Rogue Seer",
+    description: "Sees fragments of futures the Spire tries to erase.",
+  },
+  {
+    id: "l3",
+    type: "place",
+    name: "The Spire",
+    role: "Location",
+    description: "A governing spine cutting through Astrisol's upper haze.",
+  },
+  {
+    id: "l4",
+    type: "concept",
+    name: "Aetherlight",
+    role: "Power / Energy",
+    description: "The engineered luminance that structures every path in Astrisol.",
+  },
 ];
 
 function read<T>(key: string, fallback: T): T {
@@ -99,10 +124,14 @@ export function loreToPrompt(items: LoreItem[]): string {
   const grouped: Record<LoreType, LoreItem[]> = { character: [], place: [], concept: [] };
   items.forEach((i) => grouped[i.type].push(i));
   const section = (label: string, arr: LoreItem[]) =>
-    arr.length ? `${label}:\n${arr.map((i) => `- ${i.name}${i.role ? ` (${i.role})` : ""}: ${i.description}`).join("\n")}` : "";
+    arr.length
+      ? `${label}:\n${arr.map((i) => `- ${i.name}${i.role ? ` (${i.role})` : ""}: ${i.description}`).join("\n")}`
+      : "";
   return [
     section("Characters", grouped.character),
     section("Places", grouped.place),
     section("Concepts", grouped.concept),
-  ].filter(Boolean).join("\n\n");
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 }

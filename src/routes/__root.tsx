@@ -80,9 +80,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { name: "theme-color", content: "#fcfbf8" },
       { title: "Story Canvas — AI storytelling workspace" },
-      { name: "description", content: "A pocket-sized story operating system: write, remember your world, and get AI continuation, critique, and alternate directions in one screen." },
+      {
+        name: "description",
+        content:
+          "A pocket-sized story operating system: write, remember your world, and get AI continuation, critique, and alternate directions in one screen.",
+      },
       { property: "og:title", content: "Story Canvas — AI storytelling workspace" },
-      { property: "og:description", content: "Write, remember your world, and get AI continuation, critique, and alternate directions in one screen." },
+      {
+        property: "og:description",
+        content:
+          "Write, remember your world, and get AI continuation, critique, and alternate directions in one screen.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -90,7 +98,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap",
+      },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
   }),

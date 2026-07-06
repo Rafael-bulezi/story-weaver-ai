@@ -21,8 +21,7 @@ const MODE_PROMPT: Record<string, string> = {
     "MODE: Critic. Read the scene and surface 2–4 concrete issues: plot holes, unclear motivation, continuity gaps, thin worldbuilding. Bullet points. Be direct, not verbose.",
   debater:
     "MODE: Debater. Propose 2–3 bold alternate directions the story could take right now — each in one sentence, then one sentence on why it would work.",
-  chat:
-    "MODE: Assistant. Answer the user about their story or world. Ground every answer in the provided lore and current scene.",
+  chat: "MODE: Assistant. Answer the user about their story or world. Ground every answer in the provided lore and current scene.",
 };
 
 export const invokeAssistant = createServerFn({ method: "POST" })
@@ -50,8 +49,10 @@ export const invokeAssistant = createServerFn({ method: "POST" })
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      if (res.status === 429) throw new Error("Rate limit reached. Please wait a moment and try again.");
-      if (res.status === 402) throw new Error("AI credits exhausted for this workspace. Please add credits to continue.");
+      if (res.status === 429)
+        throw new Error("Rate limit reached. Please wait a moment and try again.");
+      if (res.status === 402)
+        throw new Error("AI credits exhausted for this workspace. Please add credits to continue.");
       throw new Error(`AI request failed (${res.status}): ${text.slice(0, 200)}`);
     }
 
