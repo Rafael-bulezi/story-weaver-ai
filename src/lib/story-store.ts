@@ -10,21 +10,26 @@ export interface LoreItem {
   description: string;
 }
 
-export interface Story {
+export interface Chapter {
+  id: string;
   title: string;
   content: string;
-  updatedAt: number;
+  savedAt: number;
 }
 
-const STORY_KEY = "sc:story";
-const LORE_KEY = "sc:lore";
+export interface Book {
+  id: string;
+  title: string;
+  subtitle?: string;
+  cover?: string; // emoji or short glyph
+  content: string; // current draft
+  updatedAt: number;
+  lore: LoreItem[];
+  chapters: Chapter[];
+}
 
-const DEFAULT_STORY: Story = {
-  title: "Chapter 1",
-  content:
-    "Morning had no meaning in Astrisol.\n\nThe city moved before its people did. Ribbons of engineered light — thin, silent pathways — crossed above the structures like frozen currents in the sky.\n\nZeal stood at the edge of a descending light-ribbon, watching it fold into the distance like a thought that refused to finish forming.",
-  updatedAt: Date.now(),
-};
+const BOOKS_KEY = "sc:books:v2";
+const ACTIVE_KEY = "sc:active-book";
 
 const DEFAULT_LORE: LoreItem[] = [
   {
@@ -58,6 +63,30 @@ const DEFAULT_LORE: LoreItem[] = [
   },
 ];
 
+const DEFAULT_BOOKS: Book[] = [
+  {
+    id: "b1",
+    title: "Astrisol",
+    subtitle: "Chapter 1 — The Dawnborn",
+    cover: "✦",
+    content:
+      "Morning had no meaning in Astrisol.\n\nThe city moved before its people did. Ribbons of engineered light — thin, silent pathways — crossed above the structures like frozen currents in the sky.\n\nZeal stood at the edge of a descending light-ribbon, watching it fold into the distance like a thought that refused to finish forming.",
+    updatedAt: Date.now(),
+    lore: DEFAULT_LORE,
+    chapters: [],
+  },
+  {
+    id: "b2",
+    title: "Untitled Draft",
+    subtitle: "New project",
+    cover: "◐",
+    content: "",
+    updatedAt: Date.now(),
+    lore: [],
+    chapters: [],
+  },
+];
+
 function read<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
   try {
@@ -68,55 +97,121 @@ function read<T>(key: string, fallback: T): T {
     return fallback;
   }
 }
-
 function write<T>(key: string, val: T) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(key, JSON.stringify(val));
 }
 
-export function useStory() {
-  const [story, setStory] = useState<Story>(DEFAULT_STORY);
+export function useBooks() {
+  const [books, setBooks] = useState<Book[]>(DEFAULT_BOOKS);
+  const [activeId, setActiveIdState] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setStory(read(STORY_KEY, DEFAULT_STORY));
+    setBooks(read(BOOKS_KEY, DEFAULT_BOOKS));
+    setActiveIdState(read<string | null>(ACTIVE_KEY, null));
     setHydrated(true);
   }, []);
 
-  const update = useCallback((patch: Partial<Story>) => {
-    setStory((prev) => {
-      const next = { ...prev, ...patch, updatedAt: Date.now() };
-      write(STORY_KEY, next);
-      return next;
-    });
+  const persist = useCallback((next: Book[]) => {
+    setBooks(next);
+    write(BOOKS_KEY, next);
   }, []);
 
-  return { story, update, hydrated };
-}
-
-export function useLore() {
-  const [items, setItems] = useState<LoreItem[]>(DEFAULT_LORE);
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    setItems(read(LORE_KEY, DEFAULT_LORE));
-    setHydrated(true);
+  const setActiveId = useCallback((id: string | null) => {
+    setActiveIdState(id);
+    write(ACTIVE_KEY, id);
   }, []);
 
-  const persist = (next: LoreItem[]) => {
-    setItems(next);
-    write(LORE_KEY, next);
+  const active = books.find((b) => b.id === activeId) ?? null;
+
+  const updateBook = useCallback(
+    (id: string, patch: Partial<Book> | ((b: Book) => Partial<Book>)) => {
+      setBooks((prev) => {
+        const next = prev.map((b) => {
+          if (b.id !== id) return b;
+          const p = typeof patch === "function" ? patch(b) : patch;
+          return { ...b, ...p, updatedAt: Date.now() };
+        });
+        write(BOOKS_KEY, next);
+        return next;
+      });
+    },
+    [],
+  );
+
+  const createBook = useCallback(
+    (input?: Partial<Book>) => {
+      const id = `b${Date.now()}`;
+      const book: Book = {
+        id,
+        title: input?.title ?? "Untitled Book",
+        subtitle: input?.subtitle ?? "New project",
+        cover: input?.cover ?? "◇",
+        content: input?.content ?? "",
+        updatedAt: Date.now(),
+        lore: input?.lore ?? [],
+        chapters: [],
+      };
+      const next = [book, ...books];
+      persist(next);
+      return id;
+    },
+    [books, persist],
+  );
+
+  const deleteBook = useCallback(
+    (id: string) => {
+      const next = books.filter((b) => b.id !== id);
+      persist(next);
+      if (activeId === id) setActiveId(null);
+    },
+    [books, persist, activeId, setActiveId],
+  );
+
+  // ---------- lore ops on active book ----------
+  const addLore = (item: Omit<LoreItem, "id">) => {
+    if (!active) return;
+    updateBook(active.id, (b) => ({
+      lore: [...b.lore, { ...item, id: `l${Date.now()}` }],
+    }));
+  };
+  const updateLore = (loreId: string, patch: Partial<LoreItem>) => {
+    if (!active) return;
+    updateBook(active.id, (b) => ({
+      lore: b.lore.map((i) => (i.id === loreId ? { ...i, ...patch } : i)),
+    }));
+  };
+  const removeLore = (loreId: string) => {
+    if (!active) return;
+    updateBook(active.id, (b) => ({ lore: b.lore.filter((i) => i.id !== loreId) }));
   };
 
-  const add = (item: Omit<LoreItem, "id">) => {
-    const next = [...items, { ...item, id: `l${Date.now()}` }];
-    persist(next);
+  const saveChapter = () => {
+    if (!active) return;
+    const chapter: Chapter = {
+      id: `c${Date.now()}`,
+      title: active.title,
+      content: active.content,
+      savedAt: Date.now(),
+    };
+    updateBook(active.id, (b) => ({ chapters: [chapter, ...b.chapters] }));
   };
-  const remove = (id: string) => persist(items.filter((i) => i.id !== id));
-  const updateItem = (id: string, patch: Partial<LoreItem>) =>
-    persist(items.map((i) => (i.id === id ? { ...i, ...patch } : i)));
 
-  return { items, add, remove, updateItem, hydrated };
+  return {
+    books,
+    active,
+    activeId,
+    setActiveId,
+    hydrated,
+    createBook,
+    updateBook,
+    deleteBook,
+    addLore,
+    updateLore,
+    removeLore,
+    saveChapter,
+  };
 }
 
 export function loreToPrompt(items: LoreItem[]): string {
