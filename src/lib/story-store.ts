@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 
 export type LoreType = "character" | "place" | "concept";
+export type ChapterType = "canon" | "draft";
 
 export interface LoreItem {
   id: string;
@@ -14,53 +15,43 @@ export interface Chapter {
   id: string;
   title: string;
   content: string;
+  type: ChapterType;
   savedAt: number;
+}
+
+export interface CoreBlock {
+  id: string;
+  title: string;
+  body: string;
+}
+
+export interface Core {
+  id: string;
+  title: string;
+  emoji?: string;
+  blocks: CoreBlock[];
 }
 
 export interface Book {
   id: string;
   title: string;
   subtitle?: string;
-  cover?: string; // emoji or short glyph
-  content: string; // current draft
+  cover?: string;
+  content: string;
   updatedAt: number;
   lore: LoreItem[];
   chapters: Chapter[];
+  cores: Core[];
 }
 
-const BOOKS_KEY = "sc:books:v2";
+const BOOKS_KEY = "sc:books:v3";
 const ACTIVE_KEY = "sc:active-book";
 
 const DEFAULT_LORE: LoreItem[] = [
-  {
-    id: "l1",
-    type: "character",
-    name: "Zeal",
-    role: "Protagonist",
-    description:
-      "A Dawnborn who manipulates cyan light. Searching for the truth behind the Fracture.",
-  },
-  {
-    id: "l2",
-    type: "character",
-    name: "Nyra",
-    role: "Rogue Seer",
-    description: "Sees fragments of futures the Spire tries to erase.",
-  },
-  {
-    id: "l3",
-    type: "place",
-    name: "The Spire",
-    role: "Location",
-    description: "A governing spine cutting through Astrisol's upper haze.",
-  },
-  {
-    id: "l4",
-    type: "concept",
-    name: "Aetherlight",
-    role: "Power / Energy",
-    description: "The engineered luminance that structures every path in Astrisol.",
-  },
+  { id: "l1", type: "character", name: "Zeal", role: "Protagonist", description: "A Dawnborn who manipulates cyan light. Searching for the truth behind the Fracture." },
+  { id: "l2", type: "character", name: "Nyra", role: "Rogue Seer", description: "Sees fragments of futures the Spire tries to erase." },
+  { id: "l3", type: "place", name: "The Spire", role: "Location", description: "A governing spine cutting through Astrisol's upper haze." },
+  { id: "l4", type: "concept", name: "Aetherlight", role: "Power / Energy", description: "The engineered luminance that structures every path in Astrisol." },
 ];
 
 const DEFAULT_BOOKS: Book[] = [
@@ -74,16 +65,17 @@ const DEFAULT_BOOKS: Book[] = [
     updatedAt: Date.now(),
     lore: DEFAULT_LORE,
     chapters: [],
-  },
-  {
-    id: "b2",
-    title: "Untitled Draft",
-    subtitle: "New project",
-    cover: "◐",
-    content: "",
-    updatedAt: Date.now(),
-    lore: [],
-    chapters: [],
+    cores: [
+      {
+        id: "core1",
+        title: "State of the World",
+        emoji: "◈",
+        blocks: [
+          { id: "cb1", title: "Era", body: "Post-Fracture Astrisol, three generations after the sky split." },
+          { id: "cb2", title: "Technology", body: "Aetherlight infrastructure — engineered luminance replaces roads, doors, contracts." },
+        ],
+      },
+    ],
   },
 ];
 
@@ -102,13 +94,22 @@ function write<T>(key: string, val: T) {
   window.localStorage.setItem(key, JSON.stringify(val));
 }
 
+// migrate old chapters without a type
+function migrate(books: Book[]): Book[] {
+  return books.map((b) => ({
+    ...b,
+    cores: b.cores ?? [],
+    chapters: (b.chapters ?? []).map((c) => ({ ...c, type: c.type ?? "draft" })),
+  }));
+}
+
 export function useBooks() {
   const [books, setBooks] = useState<Book[]>(DEFAULT_BOOKS);
   const [activeId, setActiveIdState] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setBooks(read(BOOKS_KEY, DEFAULT_BOOKS));
+    setBooks(migrate(read(BOOKS_KEY, DEFAULT_BOOKS)));
     setActiveIdState(read<string | null>(ACTIVE_KEY, null));
     setHydrated(true);
   }, []);
@@ -152,6 +153,7 @@ export function useBooks() {
         updatedAt: Date.now(),
         lore: input?.lore ?? [],
         chapters: [],
+        cores: [],
       };
       const next = [book, ...books];
       persist(next);
@@ -169,11 +171,11 @@ export function useBooks() {
     [books, persist, activeId, setActiveId],
   );
 
-  // ---------- lore ops on active book ----------
+  // ---------- lore ops ----------
   const addLore = (item: Omit<LoreItem, "id">) => {
     if (!active) return;
     updateBook(active.id, (b) => ({
-      lore: [...b.lore, { ...item, id: `l${Date.now()}` }],
+      lore: [...b.lore, { ...item, id: `l${Date.now()}${Math.random().toString(36).slice(2, 5)}` }],
     }));
   };
   const updateLore = (loreId: string, patch: Partial<LoreItem>) => {
@@ -187,15 +189,92 @@ export function useBooks() {
     updateBook(active.id, (b) => ({ lore: b.lore.filter((i) => i.id !== loreId) }));
   };
 
-  const saveChapter = () => {
+  /**
+   * Parse AI extraction output and auto-route items into character/place/concept.
+   * Accepts lines like:
+   *   - CHARACTER — Name — description
+   *   - PLACE: Name - description
+   *   * concept | Name | description
+   * Returns the count added.
+   */
+  const importExtractedLore = (text: string): number => {
+    if (!active) return 0;
+    const lines = text.split(/\n+/).map((l) => l.trim()).filter(Boolean);
+    const added: LoreItem[] = [];
+    for (const raw of lines) {
+      // strip leading bullets/numbers
+      const line = raw.replace(/^[-*•\d.)\s]+/, "");
+      // split on em-dash, en-dash, colon, or pipe
+      const parts = line.split(/\s*[—–\-:|]\s*/);
+      if (parts.length < 2) continue;
+      const rawType = parts[0].toLowerCase();
+      let type: LoreType | null = null;
+      if (/char|person|protagonist|npc/.test(rawType)) type = "character";
+      else if (/place|location|city|region|land|realm/.test(rawType)) type = "place";
+      else if (/concept|idea|power|force|magic|tech|term|faction|group/.test(rawType)) type = "concept";
+      if (!type) continue;
+      const name = (parts[1] ?? "").trim();
+      if (!name) continue;
+      const desc = parts.slice(2).join(" — ").trim();
+      added.push({
+        id: `l${Date.now()}${Math.random().toString(36).slice(2, 6)}`,
+        type,
+        name,
+        description: desc,
+      });
+    }
+    if (added.length === 0) return 0;
+    updateBook(active.id, (b) => ({ lore: [...b.lore, ...added] }));
+    return added.length;
+  };
+
+  // ---------- chapter ops ----------
+  const saveChapter = (type: ChapterType = "draft") => {
     if (!active) return;
     const chapter: Chapter = {
       id: `c${Date.now()}`,
       title: active.title,
       content: active.content,
+      type,
       savedAt: Date.now(),
     };
     updateBook(active.id, (b) => ({ chapters: [chapter, ...b.chapters] }));
+  };
+
+  // ---------- core ops ----------
+  const addCore = (input: { title: string; emoji?: string }) => {
+    if (!active) return;
+    const core: Core = { id: `core${Date.now()}`, title: input.title, emoji: input.emoji ?? "◇", blocks: [] };
+    updateBook(active.id, (b) => ({ cores: [...b.cores, core] }));
+  };
+  const updateCore = (coreId: string, patch: Partial<Core>) => {
+    if (!active) return;
+    updateBook(active.id, (b) => ({ cores: b.cores.map((c) => (c.id === coreId ? { ...c, ...patch } : c)) }));
+  };
+  const removeCore = (coreId: string) => {
+    if (!active) return;
+    updateBook(active.id, (b) => ({ cores: b.cores.filter((c) => c.id !== coreId) }));
+  };
+  const addCoreBlock = (coreId: string, block: Omit<CoreBlock, "id">) => {
+    if (!active) return;
+    const b2: CoreBlock = { ...block, id: `cb${Date.now()}` };
+    updateBook(active.id, (b) => ({
+      cores: b.cores.map((c) => (c.id === coreId ? { ...c, blocks: [...c.blocks, b2] } : c)),
+    }));
+  };
+  const updateCoreBlock = (coreId: string, blockId: string, patch: Partial<CoreBlock>) => {
+    if (!active) return;
+    updateBook(active.id, (b) => ({
+      cores: b.cores.map((c) =>
+        c.id === coreId ? { ...c, blocks: c.blocks.map((bl) => (bl.id === blockId ? { ...bl, ...patch } : bl)) } : c,
+      ),
+    }));
+  };
+  const removeCoreBlock = (coreId: string, blockId: string) => {
+    if (!active) return;
+    updateBook(active.id, (b) => ({
+      cores: b.cores.map((c) => (c.id === coreId ? { ...c, blocks: c.blocks.filter((bl) => bl.id !== blockId) } : c)),
+    }));
   };
 
   return {
@@ -210,7 +289,14 @@ export function useBooks() {
     addLore,
     updateLore,
     removeLore,
+    importExtractedLore,
     saveChapter,
+    addCore,
+    updateCore,
+    removeCore,
+    addCoreBlock,
+    updateCoreBlock,
+    removeCoreBlock,
   };
 }
 
@@ -228,5 +314,15 @@ export function loreToPrompt(items: LoreItem[]): string {
     section("Concepts", grouped.concept),
   ]
     .filter(Boolean)
+    .join("\n\n");
+}
+
+export function coresToPrompt(cores: Core[]): string {
+  if (!cores?.length) return "";
+  return cores
+    .map(
+      (c) =>
+        `## ${c.title}\n${c.blocks.map((b) => `- ${b.title}: ${b.body}`).join("\n")}`,
+    )
     .join("\n\n");
 }
