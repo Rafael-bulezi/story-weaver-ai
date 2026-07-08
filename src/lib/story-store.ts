@@ -2,6 +2,8 @@ import { useEffect, useState, useCallback } from "react";
 
 export type LoreType = "character" | "place" | "concept";
 export type ChapterType = "canon" | "draft";
+export type BrainstormRole = "user" | "assistant";
+export type BrainstormMode = "chat" | "critic" | "debater";
 
 export interface LoreItem {
   id: string;
@@ -9,6 +11,7 @@ export interface LoreItem {
   name: string;
   role?: string;
   description: string;
+  imageUrl?: string;
 }
 
 export interface Chapter {
@@ -32,8 +35,19 @@ export interface Core {
   blocks: CoreBlock[];
 }
 
+export interface BrainstormMessage {
+  id: string;
+  role: BrainstormRole;
+  mode?: BrainstormMode;
+  content: string;
+  createdAt: number;
+}
+
 export interface Book {
   id: string;
+  /** Book name (edited in sidebar) */
+  name: string;
+  /** Current in-progress chapter title (edited in Chat header) */
   title: string;
   subtitle?: string;
   cover?: string;
@@ -42,9 +56,10 @@ export interface Book {
   lore: LoreItem[];
   chapters: Chapter[];
   cores: Core[];
+  brainstorm: BrainstormMessage[];
 }
 
-const BOOKS_KEY = "sc:books:v3";
+const BOOKS_KEY = "sc:books:v4";
 const ACTIVE_KEY = "sc:active-book";
 
 const DEFAULT_LORE: LoreItem[] = [
@@ -57,8 +72,9 @@ const DEFAULT_LORE: LoreItem[] = [
 const DEFAULT_BOOKS: Book[] = [
   {
     id: "b1",
-    title: "Astrisol",
-    subtitle: "Chapter 1 — The Dawnborn",
+    name: "Astrisol",
+    title: "Chapter 1 — The Dawnborn",
+    subtitle: "A city that moves before its people do",
     cover: "✦",
     content:
       "Morning had no meaning in Astrisol.\n\nThe city moved before its people did. Ribbons of engineered light — thin, silent pathways — crossed above the structures like frozen currents in the sky.\n\nZeal stood at the edge of a descending light-ribbon, watching it fold into the distance like a thought that refused to finish forming.",
@@ -76,6 +92,7 @@ const DEFAULT_BOOKS: Book[] = [
         ],
       },
     ],
+    brainstorm: [],
   },
 ];
 
@@ -94,13 +111,34 @@ function write<T>(key: string, val: T) {
   window.localStorage.setItem(key, JSON.stringify(val));
 }
 
-// migrate old chapters without a type
+// migrate older versions
 function migrate(books: Book[]): Book[] {
-  return books.map((b) => ({
-    ...b,
-    cores: b.cores ?? [],
-    chapters: (b.chapters ?? []).map((c) => ({ ...c, type: c.type ?? "draft" })),
-  }));
+  return books.map((b) => {
+    const anyB = b as Book & { title?: string; name?: string };
+    const name = anyB.name ?? anyB.title ?? "Untitled Book";
+    const title = anyB.title && anyB.name ? anyB.title : (anyB.subtitle ?? "Chapter 1");
+    return {
+      ...b,
+      name,
+      title,
+      cores: b.cores ?? [],
+      brainstorm: b.brainstorm ?? [],
+      chapters: (b.chapters ?? []).map((c) => ({ ...c, type: c.type ?? "draft" })),
+    };
+  });
+}
+
+function migrateFromOldKeys(): Book[] | null {
+  if (typeof window === "undefined") return null;
+  for (const k of ["sc:books:v3", "sc:books:v2"]) {
+    const raw = window.localStorage.getItem(k);
+    if (raw) {
+      try {
+        return migrate(JSON.parse(raw) as Book[]);
+      } catch { /* ignore */ }
+    }
+  }
+  return null;
 }
 
 export function useBooks() {
@@ -109,7 +147,18 @@ export function useBooks() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setBooks(migrate(read(BOOKS_KEY, DEFAULT_BOOKS)));
+    const stored = read<Book[] | null>(BOOKS_KEY, null);
+    if (stored) {
+      setBooks(migrate(stored));
+    } else {
+      const migrated = migrateFromOldKeys();
+      if (migrated) {
+        setBooks(migrated);
+        write(BOOKS_KEY, migrated);
+      } else {
+        setBooks(DEFAULT_BOOKS);
+      }
+    }
     setActiveIdState(read<string | null>(ACTIVE_KEY, null));
     setHydrated(true);
   }, []);
@@ -146,14 +195,16 @@ export function useBooks() {
       const id = `b${Date.now()}`;
       const book: Book = {
         id,
-        title: input?.title ?? "Untitled Book",
-        subtitle: input?.subtitle ?? "New project",
+        name: input?.name ?? "Untitled Book",
+        title: input?.title ?? "Chapter 1",
+        subtitle: input?.subtitle,
         cover: input?.cover ?? "◇",
         content: input?.content ?? "",
         updatedAt: Date.now(),
         lore: input?.lore ?? [],
         chapters: [],
         cores: [],
+        brainstorm: [],
       };
       const next = [book, ...books];
       persist(next);
@@ -171,7 +222,7 @@ export function useBooks() {
     [books, persist, activeId, setActiveId],
   );
 
-  // ---------- lore ops ----------
+  // ---------- lore ----------
   const addLore = (item: Omit<LoreItem, "id">) => {
     if (!active) return;
     updateBook(active.id, (b) => ({
@@ -189,22 +240,12 @@ export function useBooks() {
     updateBook(active.id, (b) => ({ lore: b.lore.filter((i) => i.id !== loreId) }));
   };
 
-  /**
-   * Parse AI extraction output and auto-route items into character/place/concept.
-   * Accepts lines like:
-   *   - CHARACTER — Name — description
-   *   - PLACE: Name - description
-   *   * concept | Name | description
-   * Returns the count added.
-   */
   const importExtractedLore = (text: string): number => {
     if (!active) return 0;
     const lines = text.split(/\n+/).map((l) => l.trim()).filter(Boolean);
     const added: LoreItem[] = [];
     for (const raw of lines) {
-      // strip leading bullets/numbers
       const line = raw.replace(/^[-*•\d.)\s]+/, "");
-      // split on em-dash, en-dash, colon, or pipe
       const parts = line.split(/\s*[—–\-:|]\s*/);
       if (parts.length < 2) continue;
       const rawType = parts[0].toLowerCase();
@@ -228,7 +269,7 @@ export function useBooks() {
     return added.length;
   };
 
-  // ---------- chapter ops ----------
+  // ---------- chapters ----------
   const saveChapter = (type: ChapterType = "draft") => {
     if (!active) return;
     const chapter: Chapter = {
@@ -241,11 +282,12 @@ export function useBooks() {
     updateBook(active.id, (b) => ({ chapters: [chapter, ...b.chapters] }));
   };
 
-  // ---------- core ops ----------
+  // ---------- cores ----------
   const addCore = (input: { title: string; emoji?: string }) => {
-    if (!active) return;
+    if (!active) return null;
     const core: Core = { id: `core${Date.now()}`, title: input.title, emoji: input.emoji ?? "◇", blocks: [] };
     updateBook(active.id, (b) => ({ cores: [...b.cores, core] }));
+    return core.id;
   };
   const updateCore = (coreId: string, patch: Partial<Core>) => {
     if (!active) return;
@@ -277,6 +319,22 @@ export function useBooks() {
     }));
   };
 
+  // ---------- brainstorm ----------
+  const addBrainstorm = (msg: Omit<BrainstormMessage, "id" | "createdAt">) => {
+    if (!active) return;
+    const m: BrainstormMessage = { ...msg, id: `bs${Date.now()}${Math.random().toString(36).slice(2, 5)}`, createdAt: Date.now() };
+    updateBook(active.id, (b) => ({ brainstorm: [...b.brainstorm, m] }));
+    return m;
+  };
+  const removeBrainstorm = (id: string) => {
+    if (!active) return;
+    updateBook(active.id, (b) => ({ brainstorm: b.brainstorm.filter((m) => m.id !== id) }));
+  };
+  const clearBrainstorm = () => {
+    if (!active) return;
+    updateBook(active.id, { brainstorm: [] });
+  };
+
   return {
     books,
     active,
@@ -297,8 +355,13 @@ export function useBooks() {
     addCoreBlock,
     updateCoreBlock,
     removeCoreBlock,
+    addBrainstorm,
+    removeBrainstorm,
+    clearBrainstorm,
   };
 }
+
+export type BooksApi = ReturnType<typeof useBooks>;
 
 export function loreToPrompt(items: LoreItem[]): string {
   if (!items.length) return "(no lore yet)";
@@ -321,8 +384,38 @@ export function coresToPrompt(cores: Core[]): string {
   if (!cores?.length) return "";
   return cores
     .map(
-      (c) =>
-        `## ${c.title}\n${c.blocks.map((b) => `- ${b.title}: ${b.body}`).join("\n")}`,
+      (c, i) =>
+        `## Core ${i + 1}: ${c.title}\n${c.blocks
+          .map((b, j) => `${i + 1}.${j + 1} ${b.title}: ${b.body}`)
+          .join("\n")}`,
     )
     .join("\n\n");
+}
+
+/**
+ * Build the shared context block sent with every AI request.
+ * - Cores are highest priority (always full).
+ * - Lore is condensed (name + one-line role/desc).
+ * - Chapter text is included only when includeChapter=true.
+ * - Brainstorm tail (last N messages) is included when brainstormTail>0.
+ */
+export function buildBookContext(
+  book: Book,
+  opts: { includeChapter?: boolean; brainstormTail?: number } = {},
+): string {
+  const parts: string[] = [];
+  parts.push(`BOOK: ${book.name}\nCHAPTER: ${book.title}`);
+  if (book.cores.length) parts.push(`WORLD CORES (canonical facts):\n${coresToPrompt(book.cores)}`);
+  if (book.lore.length) parts.push(`LORE:\n${loreToPrompt(book.lore)}`);
+  if (opts.includeChapter && book.content.trim()) {
+    parts.push(`CURRENT CHAPTER TEXT:\n${book.content}`);
+  }
+  const tail = opts.brainstormTail ?? 0;
+  if (tail > 0 && book.brainstorm.length) {
+    const recent = book.brainstorm.slice(-tail);
+    parts.push(
+      `RECENT BRAINSTORM (chronological):\n${recent.map((m) => `${m.role.toUpperCase()}${m.mode ? `(${m.mode})` : ""}: ${m.content}`).join("\n")}`,
+    );
+  }
+  return parts.join("\n\n---\n\n");
 }
