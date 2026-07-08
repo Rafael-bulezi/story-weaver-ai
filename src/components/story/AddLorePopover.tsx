@@ -25,7 +25,15 @@ export function AddLoreOverlay({
   );
 }
 
-function AddBtn({ label, icon: Icon, onClick }: { label: string; icon: React.ElementType; onClick: () => void }) {
+function AddBtn({
+  label,
+  icon: Icon,
+  onClick,
+}: {
+  label: string;
+  icon: React.ElementType;
+  onClick: () => void;
+}) {
   return (
     <button
       onClick={onClick}

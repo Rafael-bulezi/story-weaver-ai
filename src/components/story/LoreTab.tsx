@@ -1,7 +1,18 @@
 import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { User, MapPin, Lightbulb, Trash2, Pencil, X, ImageIcon, Wand2, Loader2, Upload } from "lucide-react";
+import {
+  User,
+  MapPin,
+  Lightbulb,
+  Trash2,
+  Pencil,
+  X,
+  ImageIcon,
+  Wand2,
+  Loader2,
+  Upload,
+} from "lucide-react";
 
 import type { BooksApi, LoreItem, LoreType } from "@/lib/story-store";
 import { generateLoreImage } from "@/lib/image.functions";
@@ -45,14 +56,18 @@ export function LoreTab({ books }: { books: BooksApi }) {
       <div className="no-scrollbar flex-1 space-y-2 overflow-y-auto px-4 py-4">
         {filtered.length === 0 && (
           <div className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-            Nothing here yet. Use the <span className="font-medium">+</span> button above the nav to add one.
+            Nothing here yet. Use the <span className="font-medium">+</span> button above the nav to
+            add one.
           </div>
         )}
         {filtered.map((item) => (
           <LoreRow
             key={item.id}
             item={item}
-            onSave={(patch) => { books.updateLore(item.id, patch); toast.success("Updated"); }}
+            onSave={(patch) => {
+              books.updateLore(item.id, patch);
+              toast.success("Updated");
+            }}
             onDelete={() => books.removeLore(item.id)}
             onViewImage={() => item.imageUrl && setViewImage(item.imageUrl)}
           />
@@ -60,7 +75,10 @@ export function LoreTab({ books }: { books: BooksApi }) {
       </div>
 
       {viewImage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6" onClick={() => setViewImage(null)}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6"
+          onClick={() => setViewImage(null)}
+        >
           <img src={viewImage} alt="Lore" className="max-h-full max-w-full rounded-xl" />
         </div>
       )}
@@ -69,7 +87,10 @@ export function LoreTab({ books }: { books: BooksApi }) {
 }
 
 function LoreRow({
-  item, onSave, onDelete, onViewImage,
+  item,
+  onSave,
+  onDelete,
+  onViewImage,
 }: {
   item: LoreItem;
   onSave: (patch: Partial<LoreItem>) => void;
@@ -83,7 +104,10 @@ function LoreRow({
       <LoreEditor
         item={item}
         onCancel={() => setEditing(false)}
-        onSave={(v) => { onSave(v); setEditing(false); }}
+        onSave={(v) => {
+          onSave(v);
+          setEditing(false);
+        }}
       />
     );
   }
@@ -103,24 +127,40 @@ function LoreRow({
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
               <div className="truncate text-sm font-semibold">{item.name}</div>
-              {item.role && <div className="truncate text-[11px] text-muted-foreground">{item.role}</div>}
+              {item.role && (
+                <div className="truncate text-[11px] text-muted-foreground">{item.role}</div>
+              )}
             </div>
             <div className="flex gap-1">
               {item.imageUrl && (
-                <button onClick={onViewImage} className="rounded-full p-1.5 hover:bg-muted" aria-label="View image">
+                <button
+                  onClick={onViewImage}
+                  className="rounded-full p-1.5 hover:bg-muted"
+                  aria-label="View image"
+                >
                   <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
                 </button>
               )}
-              <button onClick={() => setEditing(true)} className="rounded-full p-1.5 hover:bg-muted" aria-label="Edit">
+              <button
+                onClick={() => setEditing(true)}
+                className="rounded-full p-1.5 hover:bg-muted"
+                aria-label="Edit"
+              >
                 <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
               </button>
-              <button onClick={onDelete} className="rounded-full p-1.5 hover:bg-muted" aria-label="Delete">
+              <button
+                onClick={onDelete}
+                className="rounded-full p-1.5 hover:bg-muted"
+                aria-label="Delete"
+              >
                 <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
               </button>
             </div>
           </div>
           {item.description && (
-            <p className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground">{item.description}</p>
+            <p className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground">
+              {item.description}
+            </p>
           )}
         </div>
       </div>
@@ -129,12 +169,21 @@ function LoreRow({
 }
 
 export function LoreEditor({
-  item, initialType, onCancel, onSave,
+  item,
+  initialType,
+  onCancel,
+  onSave,
 }: {
   item?: LoreItem;
   initialType?: LoreType;
   onCancel: () => void;
-  onSave: (v: { name: string; role?: string; description: string; imageUrl?: string; type?: LoreType }) => void;
+  onSave: (v: {
+    name: string;
+    role?: string;
+    description: string;
+    imageUrl?: string;
+    type?: LoreType;
+  }) => void;
 }) {
   const type = item?.type ?? initialType ?? "character";
   const [name, setName] = useState(item?.name ?? "");
@@ -145,17 +194,25 @@ export function LoreEditor({
   const fileRef = useRef<HTMLInputElement | null>(null);
   const genImage = useServerFn(generateLoreImage);
 
-  function pickFile() { fileRef.current?.click(); }
+  function pickFile() {
+    fileRef.current?.click();
+  }
   function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
-    if (f.size > 2_000_000) { toast.error("Image over 2MB — pick smaller."); return; }
+    if (f.size > 2_000_000) {
+      toast.error("Image over 2MB — pick smaller.");
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => setImageUrl(String(reader.result));
     reader.readAsDataURL(f);
   }
   async function generate() {
-    if (!name.trim()) { toast.error("Add a name first"); return; }
+    if (!name.trim()) {
+      toast.error("Add a name first");
+      return;
+    }
     setGenerating(true);
     try {
       const prompt = `${type === "character" ? "Portrait of a character" : type === "place" ? "Illustration of a place" : "Symbolic illustration of a concept"} named ${name}. ${role ? `${role}. ` : ""}${description}. Cinematic, painterly, moody lighting.`;
@@ -193,7 +250,13 @@ export function LoreEditor({
         <div className="flex-1 space-y-1.5">
           <Input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
           <Input
-            placeholder={type === "character" ? "Role (e.g. Protagonist)" : type === "place" ? "Kind (e.g. City)" : "Category"}
+            placeholder={
+              type === "character"
+                ? "Role (e.g. Protagonist)"
+                : type === "place"
+                  ? "Kind (e.g. City)"
+                  : "Category"
+            }
             value={role}
             onChange={(e) => setRole(e.target.value)}
           />
@@ -207,19 +270,45 @@ export function LoreEditor({
       />
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
       <div className="flex flex-wrap gap-1.5">
-        <Button size="sm" variant="outline" onClick={pickFile} className="h-8 rounded-full text-[11.5px]">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={pickFile}
+          className="h-8 rounded-full text-[11.5px]"
+        >
           <Upload className="mr-1 h-3.5 w-3.5" /> Attach
         </Button>
-        <Button size="sm" variant="outline" onClick={generate} disabled={generating} className="h-8 rounded-full text-[11.5px]">
-          {generating ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Wand2 className="mr-1 h-3.5 w-3.5" />} Generate
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={generate}
+          disabled={generating}
+          className="h-8 rounded-full text-[11.5px]"
+        >
+          {generating ? (
+            <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Wand2 className="mr-1 h-3.5 w-3.5" />
+          )}{" "}
+          Generate
         </Button>
       </div>
       <div className="flex justify-end gap-2">
-        <Button size="sm" variant="ghost" onClick={onCancel}>Cancel</Button>
+        <Button size="sm" variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
         <Button
           size="sm"
           disabled={!name.trim()}
-          onClick={() => onSave({ name: name.trim(), role: role.trim() || undefined, description: description.trim(), imageUrl, type })}
+          onClick={() =>
+            onSave({
+              name: name.trim(),
+              role: role.trim() || undefined,
+              description: description.trim(),
+              imageUrl,
+              type,
+            })
+          }
         >
           Save
         </Button>

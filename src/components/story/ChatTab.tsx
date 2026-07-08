@@ -95,7 +95,11 @@ export function ChatTab({
       </div>
 
       {saveOpen && (
-        <SaveDialog onClose={() => setSaveOpen(false)} onDraft={() => saveChapter("draft")} onCanon={() => saveChapter("canon")} />
+        <SaveDialog
+          onClose={() => setSaveOpen(false)}
+          onDraft={() => saveChapter("draft")}
+          onCanon={() => saveChapter("canon")}
+        />
       )}
     </div>
   );
@@ -136,19 +140,35 @@ function SecondaryPill({
   );
 }
 
-function SaveDialog({ onClose, onDraft, onCanon }: { onClose: () => void; onDraft: () => void; onCanon: () => void }) {
+function SaveDialog({
+  onClose,
+  onDraft,
+  onCanon,
+}: {
+  onClose: () => void;
+  onDraft: () => void;
+  onCanon: () => void;
+}) {
   return (
     <div className="fixed inset-0 z-50 flex items-end">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div className="relative w-full rounded-t-3xl border-t border-border bg-background p-5 pb-[calc(env(safe-area-inset-bottom)+16px)]">
         <h2 className="mb-1 text-[15px] font-semibold">Save Chapter As</h2>
-        <p className="mb-4 text-[13px] text-muted-foreground">Choose how to file the current state.</p>
+        <p className="mb-4 text-[13px] text-muted-foreground">
+          Choose how to file the current state.
+        </p>
         <div className="space-y-2">
-          <button onClick={onDraft} className="w-full rounded-2xl border border-border bg-card p-4 text-left active:opacity-70">
+          <button
+            onClick={onDraft}
+            className="w-full rounded-2xl border border-border bg-card p-4 text-left active:opacity-70"
+          >
             <div className="text-[13px] font-semibold">Save to Drafts</div>
             <div className="text-[12px] text-muted-foreground">A working snapshot.</div>
           </button>
-          <button onClick={onCanon} className="w-full rounded-2xl border border-border bg-card p-4 text-left active:opacity-70">
+          <button
+            onClick={onCanon}
+            className="w-full rounded-2xl border border-border bg-card p-4 text-left active:opacity-70"
+          >
             <div className="text-[13px] font-semibold">Push to Canon</div>
             <div className="text-[12px] text-muted-foreground">The definitive version.</div>
           </button>

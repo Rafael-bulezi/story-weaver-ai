@@ -31,7 +31,11 @@ export function SideMenu({ books, onClose }: { books: BooksApi; onClose: () => v
           <SheetTitle className="flex items-center gap-2 text-base">
             <Library className="h-4 w-4" /> Your Books
           </SheetTitle>
-          <button onClick={onClose} aria-label="Close" className="rounded-full p-1.5 hover:bg-muted">
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="rounded-full p-1.5 hover:bg-muted"
+          >
             <X className="h-4 w-4" />
           </button>
         </SheetHeader>
@@ -55,25 +59,41 @@ export function SideMenu({ books, onClose }: { books: BooksApi; onClose: () => v
                 key={b.id}
                 book={b}
                 isActive={books.activeId === b.id}
-                onOpen={() => { books.setActiveId(b.id); onClose(); }}
+                onOpen={() => {
+                  books.setActiveId(b.id);
+                  onClose();
+                }}
                 onRename={(name) => books.updateBook(b.id, { name })}
-                onDelete={() => { if (confirm(`Delete "${b.name}"?`)) books.deleteBook(b.id); }}
+                onDelete={() => {
+                  if (confirm(`Delete "${b.name}"?`)) books.deleteBook(b.id);
+                }}
               />
             ))}
           </div>
           <button
-            onClick={() => { books.setActiveId(null); onClose(); }}
+            onClick={() => {
+              books.setActiveId(null);
+              onClose();
+            }}
             className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-2xl border border-border/60 bg-card p-2.5 text-[12px] font-medium text-muted-foreground hover:bg-muted"
           >
             <ChevronLeft className="h-3.5 w-3.5" /> Back to Library
           </button>
         </div>
         <div className="space-y-1.5 border-t border-border/60 p-3">
-          <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Settings</div>
-          <button onClick={exportData} className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[13px] hover:bg-muted">
+          <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+            Settings
+          </div>
+          <button
+            onClick={exportData}
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[13px] hover:bg-muted"
+          >
             <Download className="h-4 w-4 text-muted-foreground" /> Export data
           </button>
-          <button onClick={clearAll} className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[13px] text-destructive hover:bg-destructive/10">
+          <button
+            onClick={clearAll}
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[13px] text-destructive hover:bg-destructive/10"
+          >
             <Trash2 className="h-4 w-4" /> Clear all data
           </button>
         </div>
@@ -83,7 +103,11 @@ export function SideMenu({ books, onClose }: { books: BooksApi; onClose: () => v
 }
 
 function BookRow({
-  book, isActive, onOpen, onRename, onDelete,
+  book,
+  isActive,
+  onOpen,
+  onRename,
+  onDelete,
 }: {
   book: { id: string; name: string; cover?: string; lore: unknown[]; chapters: unknown[] };
   isActive: boolean;
@@ -97,10 +121,15 @@ function BookRow({
     <div
       className={cn(
         "flex items-start gap-3 rounded-2xl border p-3 transition",
-        isActive ? "border-primary/40 bg-[color:var(--writer-bg)]" : "border-border/70 bg-card hover:bg-muted/40",
+        isActive
+          ? "border-primary/40 bg-[color:var(--writer-bg)]"
+          : "border-border/70 bg-card hover:bg-muted/40",
       )}
     >
-      <button onClick={onOpen} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted font-serif text-lg">
+      <button
+        onClick={onOpen}
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted font-serif text-lg"
+      >
         {book.cover ?? "◇"}
       </button>
       <div className="min-w-0 flex-1">
@@ -109,8 +138,14 @@ function BookRow({
             autoFocus
             value={name}
             onChange={(e) => setName(e.target.value)}
-            onBlur={() => { onRename(name.trim() || "Untitled"); setEditing(false); toast.success("Renamed"); }}
-            onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+            onBlur={() => {
+              onRename(name.trim() || "Untitled");
+              setEditing(false);
+              toast.success("Renamed");
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+            }}
             className="w-full bg-transparent text-sm font-semibold outline-none"
           />
         ) : (
@@ -125,7 +160,11 @@ function BookRow({
         </div>
       </div>
       <div className="flex flex-col gap-1">
-        <button onClick={() => setEditing(true)} className="rounded-full p-1 hover:bg-muted" aria-label="Rename">
+        <button
+          onClick={() => setEditing(true)}
+          className="rounded-full p-1 hover:bg-muted"
+          aria-label="Rename"
+        >
           <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
         </button>
         <button onClick={onDelete} className="rounded-full p-1 hover:bg-muted" aria-label="Delete">

@@ -63,10 +63,35 @@ const BOOKS_KEY = "sc:books:v4";
 const ACTIVE_KEY = "sc:active-book";
 
 const DEFAULT_LORE: LoreItem[] = [
-  { id: "l1", type: "character", name: "Zeal", role: "Protagonist", description: "A Dawnborn who manipulates cyan light. Searching for the truth behind the Fracture." },
-  { id: "l2", type: "character", name: "Nyra", role: "Rogue Seer", description: "Sees fragments of futures the Spire tries to erase." },
-  { id: "l3", type: "place", name: "The Spire", role: "Location", description: "A governing spine cutting through Astrisol's upper haze." },
-  { id: "l4", type: "concept", name: "Aetherlight", role: "Power / Energy", description: "The engineered luminance that structures every path in Astrisol." },
+  {
+    id: "l1",
+    type: "character",
+    name: "Zeal",
+    role: "Protagonist",
+    description:
+      "A Dawnborn who manipulates cyan light. Searching for the truth behind the Fracture.",
+  },
+  {
+    id: "l2",
+    type: "character",
+    name: "Nyra",
+    role: "Rogue Seer",
+    description: "Sees fragments of futures the Spire tries to erase.",
+  },
+  {
+    id: "l3",
+    type: "place",
+    name: "The Spire",
+    role: "Location",
+    description: "A governing spine cutting through Astrisol's upper haze.",
+  },
+  {
+    id: "l4",
+    type: "concept",
+    name: "Aetherlight",
+    role: "Power / Energy",
+    description: "The engineered luminance that structures every path in Astrisol.",
+  },
 ];
 
 const DEFAULT_BOOKS: Book[] = [
@@ -87,8 +112,16 @@ const DEFAULT_BOOKS: Book[] = [
         title: "State of the World",
         emoji: "◈",
         blocks: [
-          { id: "cb1", title: "Era", body: "Post-Fracture Astrisol, three generations after the sky split." },
-          { id: "cb2", title: "Technology", body: "Aetherlight infrastructure — engineered luminance replaces roads, doors, contracts." },
+          {
+            id: "cb1",
+            title: "Era",
+            body: "Post-Fracture Astrisol, three generations after the sky split.",
+          },
+          {
+            id: "cb2",
+            title: "Technology",
+            body: "Aetherlight infrastructure — engineered luminance replaces roads, doors, contracts.",
+          },
         ],
       },
     ],
@@ -135,7 +168,9 @@ function migrateFromOldKeys(): Book[] | null {
     if (raw) {
       try {
         return migrate(JSON.parse(raw) as Book[]);
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
   }
   return null;
@@ -242,7 +277,10 @@ export function useBooks() {
 
   const importExtractedLore = (text: string): number => {
     if (!active) return 0;
-    const lines = text.split(/\n+/).map((l) => l.trim()).filter(Boolean);
+    const lines = text
+      .split(/\n+/)
+      .map((l) => l.trim())
+      .filter(Boolean);
     const added: LoreItem[] = [];
     for (const raw of lines) {
       const line = raw.replace(/^[-*•\d.)\s]+/, "");
@@ -252,7 +290,8 @@ export function useBooks() {
       let type: LoreType | null = null;
       if (/char|person|protagonist|npc/.test(rawType)) type = "character";
       else if (/place|location|city|region|land|realm/.test(rawType)) type = "place";
-      else if (/concept|idea|power|force|magic|tech|term|faction|group/.test(rawType)) type = "concept";
+      else if (/concept|idea|power|force|magic|tech|term|faction|group/.test(rawType))
+        type = "concept";
       if (!type) continue;
       const name = (parts[1] ?? "").trim();
       if (!name) continue;
@@ -285,13 +324,20 @@ export function useBooks() {
   // ---------- cores ----------
   const addCore = (input: { title: string; emoji?: string }) => {
     if (!active) return null;
-    const core: Core = { id: `core${Date.now()}`, title: input.title, emoji: input.emoji ?? "◇", blocks: [] };
+    const core: Core = {
+      id: `core${Date.now()}`,
+      title: input.title,
+      emoji: input.emoji ?? "◇",
+      blocks: [],
+    };
     updateBook(active.id, (b) => ({ cores: [...b.cores, core] }));
     return core.id;
   };
   const updateCore = (coreId: string, patch: Partial<Core>) => {
     if (!active) return;
-    updateBook(active.id, (b) => ({ cores: b.cores.map((c) => (c.id === coreId ? { ...c, ...patch } : c)) }));
+    updateBook(active.id, (b) => ({
+      cores: b.cores.map((c) => (c.id === coreId ? { ...c, ...patch } : c)),
+    }));
   };
   const removeCore = (coreId: string) => {
     if (!active) return;
@@ -308,21 +354,29 @@ export function useBooks() {
     if (!active) return;
     updateBook(active.id, (b) => ({
       cores: b.cores.map((c) =>
-        c.id === coreId ? { ...c, blocks: c.blocks.map((bl) => (bl.id === blockId ? { ...bl, ...patch } : bl)) } : c,
+        c.id === coreId
+          ? { ...c, blocks: c.blocks.map((bl) => (bl.id === blockId ? { ...bl, ...patch } : bl)) }
+          : c,
       ),
     }));
   };
   const removeCoreBlock = (coreId: string, blockId: string) => {
     if (!active) return;
     updateBook(active.id, (b) => ({
-      cores: b.cores.map((c) => (c.id === coreId ? { ...c, blocks: c.blocks.filter((bl) => bl.id !== blockId) } : c)),
+      cores: b.cores.map((c) =>
+        c.id === coreId ? { ...c, blocks: c.blocks.filter((bl) => bl.id !== blockId) } : c,
+      ),
     }));
   };
 
   // ---------- brainstorm ----------
   const addBrainstorm = (msg: Omit<BrainstormMessage, "id" | "createdAt">) => {
     if (!active) return;
-    const m: BrainstormMessage = { ...msg, id: `bs${Date.now()}${Math.random().toString(36).slice(2, 5)}`, createdAt: Date.now() };
+    const m: BrainstormMessage = {
+      ...msg,
+      id: `bs${Date.now()}${Math.random().toString(36).slice(2, 5)}`,
+      createdAt: Date.now(),
+    };
     updateBook(active.id, (b) => ({ brainstorm: [...b.brainstorm, m] }));
     return m;
   };

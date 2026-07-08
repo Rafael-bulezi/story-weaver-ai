@@ -2,7 +2,18 @@ import { useState, useRef, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
-  Send, Loader2, Sparkles, ScanSearch, Scale, X, Copy, Replace, Wand2, ChevronDown, Feather, Plus,
+  Send,
+  Loader2,
+  Sparkles,
+  ScanSearch,
+  Scale,
+  X,
+  Copy,
+  Replace,
+  Wand2,
+  ChevronDown,
+  Feather,
+  Plus,
 } from "lucide-react";
 
 import type { BooksApi, BrainstormMessage, Core } from "@/lib/story-store";
@@ -78,7 +89,11 @@ export function BrainstormTab({
           context: `BRAINSTORM OUTPUT:\n${text}`,
         },
       });
-      const coreTitle = (title || "New Core").trim().replace(/^["'`]|["'`]$/g, "").slice(0, 60) || "New Core";
+      const coreTitle =
+        (title || "New Core")
+          .trim()
+          .replace(/^["'`]|["'`]$/g, "")
+          .slice(0, 60) || "New Core";
       const id = books.addCore({ title: `${coreTitle}`, emoji: "◇" });
       if (id) {
         books.addCoreBlock(id, { title: "Note", body: text.trim() });
@@ -127,7 +142,8 @@ export function BrainstormTab({
         {active.brainstorm.length === 0 && (
           <div className="rounded-2xl border border-dashed border-border p-6 text-center text-[13px] text-muted-foreground">
             <Wand2 className="mx-auto mb-2 h-4 w-4" />
-            Brainstorm with the AI. It sees your cores, lore, and recent chat — but not your chapter unless you tick above.
+            Brainstorm with the AI. It sees your cores, lore, and recent chat — but not your chapter
+            unless you tick above.
           </div>
         )}
         {active.brainstorm.map((m) =>
@@ -139,14 +155,24 @@ export function BrainstormTab({
               message={m}
               cores={cores}
               onDelete={() => books.removeBrainstorm(m.id)}
-              onCopy={() => navigator.clipboard.writeText(m.content).then(() => toast.success("Copied"))}
+              onCopy={() =>
+                navigator.clipboard.writeText(m.content).then(() => toast.success("Copied"))
+              }
               onAppend={() => insertAtCursor(m.content)}
               onInsertCore={() => insertAsCore(m.content)}
               onSuggestFix={async () => {
                 const { content } = await invoke({
-                  data: { mode: "suggest_fix", action: "Suggest 3 fixes for this critic note.", context: `CRITIC NOTE:\n${m.content}` },
+                  data: {
+                    mode: "suggest_fix",
+                    action: "Suggest 3 fixes for this critic note.",
+                    context: `CRITIC NOTE:\n${m.content}`,
+                  },
                 });
-                books.addBrainstorm({ role: "assistant", mode: "critic", content: `FIX OPTIONS:\n${content.trim()}` });
+                books.addBrainstorm({
+                  role: "assistant",
+                  mode: "critic",
+                  content: `FIX OPTIONS:\n${content.trim()}`,
+                });
               }}
               onAddOptionToCore={(option, coreId, subcard) => {
                 if (coreId === "__new__") {
@@ -185,7 +211,11 @@ export function BrainstormTab({
             className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-40"
             aria-label="Send"
           >
-            {busy === "chat" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+            {busy === "chat" ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-3.5 w-3.5" />
+            )}
           </button>
         </div>
       </form>
@@ -271,10 +301,25 @@ function AssistantBubble({
   const [openFor, setOpenFor] = useState<string | null>(null);
   const tone =
     message.mode === "critic"
-      ? { bg: "bg-[color:var(--critic-bg)]", text: "text-[color:var(--critic)]", Icon: ScanSearch, label: "Critic" }
+      ? {
+          bg: "bg-[color:var(--critic-bg)]",
+          text: "text-[color:var(--critic)]",
+          Icon: ScanSearch,
+          label: "Critic",
+        }
       : message.mode === "debater"
-        ? { bg: "bg-[color:var(--debater-bg)]", text: "text-[color:var(--debater)]", Icon: Scale, label: "Debater" }
-        : { bg: "bg-[color:var(--writer-bg)]", text: "text-[color:var(--writer)]", Icon: Sparkles, label: "Brainstorm" };
+        ? {
+            bg: "bg-[color:var(--debater-bg)]",
+            text: "text-[color:var(--debater)]",
+            Icon: Scale,
+            label: "Debater",
+          }
+        : {
+            bg: "bg-[color:var(--writer-bg)]",
+            text: "text-[color:var(--writer)]",
+            Icon: Sparkles,
+            label: "Brainstorm",
+          };
   const Icon = tone.Icon;
 
   const isFixList = /^FIX OPTIONS:/i.test(message.content);
@@ -316,7 +361,10 @@ function AssistantBubble({
               {openFor === `${i}` && (
                 <div className="mt-2 space-y-1 rounded-lg border border-border/60 bg-card p-2">
                   <button
-                    onClick={() => { onAddOptionToCore(opt, "__new__"); setOpenFor(null); }}
+                    onClick={() => {
+                      onAddOptionToCore(opt, "__new__");
+                      setOpenFor(null);
+                    }}
                     className="block w-full rounded px-2 py-1 text-left text-[11.5px] hover:bg-muted"
                   >
                     + Add as new Core
@@ -324,14 +372,19 @@ function AssistantBubble({
                   {cores.map((c, ci) => (
                     <button
                       key={c.id}
-                      onClick={() => { onAddOptionToCore(opt, c.id, `Fix ${(c.blocks.length ?? 0) + 1}`); setOpenFor(null); }}
+                      onClick={() => {
+                        onAddOptionToCore(opt, c.id, `Fix ${(c.blocks.length ?? 0) + 1}`);
+                        setOpenFor(null);
+                      }}
                       className="block w-full rounded px-2 py-1 text-left text-[11.5px] hover:bg-muted"
                     >
                       Core {ci + 1}: {c.title}
                     </button>
                   ))}
                   {cores.length === 0 && (
-                    <div className="px-2 py-1 text-[11px] text-muted-foreground">No cores yet — use "new Core".</div>
+                    <div className="px-2 py-1 text-[11px] text-muted-foreground">
+                      No cores yet — use "new Core".
+                    </div>
                   )}
                 </div>
               )}
@@ -351,7 +404,11 @@ function AssistantBubble({
             label="Suggest Fix"
             onClick={async () => {
               setSuggesting(true);
-              try { await onSuggestFix(); } finally { setSuggesting(false); }
+              try {
+                await onSuggestFix();
+              } finally {
+                setSuggesting(false);
+              }
             }}
           />
         )}

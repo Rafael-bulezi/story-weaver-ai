@@ -2,7 +2,16 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 const InvokeInput = z.object({
-  mode: z.enum(["writer", "critic", "debater", "chat", "extract", "categorize", "suggest_fix", "cores_ask"]),
+  mode: z.enum([
+    "writer",
+    "critic",
+    "debater",
+    "chat",
+    "extract",
+    "categorize",
+    "suggest_fix",
+    "cores_ask",
+  ]),
   action: z.string(),
   context: z.string(),
   userPrompt: z.string().optional().default(""),
@@ -20,8 +29,7 @@ const MODE_PROMPT: Record<string, string> = {
     "MODE: Critic. Read the material and surface 2–4 concrete issues: plot holes, unclear motivation, continuity gaps, thin worldbuilding. Bullet points. Be direct.",
   debater:
     "MODE: Debater. Propose 2–3 bold alternate directions — each in one sentence, then one sentence on why it would work.",
-  chat:
-    "MODE: Brainstorm. You are the user's writing partner. Answer questions about the story/world, propose ideas, riff. Ground every reply in the provided CORES and LORE. Keep replies conversational and focused.",
+  chat: "MODE: Brainstorm. You are the user's writing partner. Answer questions about the story/world, propose ideas, riff. Ground every reply in the provided CORES and LORE. Keep replies conversational and focused.",
   extract:
     "MODE: Lore Extractor. Read the material and extract new characters, places, or concepts worth adding to the world lore. Return ONLY a bulleted list, one per line, in this exact format:\nTYPE — NAME — one-line description\nWhere TYPE is one of: CHARACTER, PLACE, CONCEPT. No preamble.",
   categorize:

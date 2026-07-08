@@ -70,7 +70,9 @@ function StoryCanvasApp() {
         <main className="flex-1 overflow-y-auto px-5 py-6">
           <div className="mx-auto max-w-2xl">
             <h1 className="font-serif text-3xl font-semibold">Choose a book</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Every book keeps its own lore, cores, and chapters.</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Every book keeps its own lore, cores, and chapters.
+            </p>
             <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
               {books.books.map((b) => (
                 <button
@@ -126,7 +128,9 @@ function StoryCanvasApp() {
             <SideMenu books={books} onClose={() => setSideOpen(false)} />
           </Sheet>
           <div className="ml-1 flex min-w-0 flex-col leading-tight">
-            <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Book</span>
+            <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+              Book
+            </span>
             <span className="truncate text-sm font-semibold">{active.name}</span>
           </div>
         </div>
@@ -136,7 +140,11 @@ function StoryCanvasApp() {
       <main className="relative flex-1 overflow-hidden">
         {tab === "chat" && <ChatTab books={books} editorRef={editorRef} />}
         {tab === "brainstorm" && (
-          <BrainstormTab books={books} editorRef={editorRef} onSwitchToChat={() => setTab("chat")} />
+          <BrainstormTab
+            books={books}
+            editorRef={editorRef}
+            onSwitchToChat={() => setTab("chat")}
+          />
         )}
         {tab === "lore" && <LoreTab books={books} />}
         {tab === "cores" && <CoresTab books={books} />}
@@ -159,8 +167,14 @@ function StoryCanvasApp() {
 
         {/* Inline add editor overlay */}
         {pendingLore && (
-          <div className="fixed inset-0 z-40 flex items-end bg-black/40" onClick={() => setPendingLore(null)}>
-            <div onClick={(e) => e.stopPropagation()} className="w-full rounded-t-3xl border-t border-border bg-background p-4 pb-[calc(env(safe-area-inset-bottom)+80px)]">
+          <div
+            className="fixed inset-0 z-40 flex items-end bg-black/40"
+            onClick={() => setPendingLore(null)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="w-full rounded-t-3xl border-t border-border bg-background p-4 pb-[calc(env(safe-area-inset-bottom)+80px)]"
+            >
               <div className="mx-auto max-w-lg">
                 <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                   New {pendingLore}
@@ -189,8 +203,15 @@ function StoryCanvasApp() {
       {/* Bottom nav */}
       <BottomNav
         tab={tab}
-        onChange={(t) => { setTab(t); setAddOpen(false); }}
-        centerSlot={showFloatingPlus ? <AddButton open={addOpen} onClick={() => setAddOpen((v) => !v)} /> : undefined}
+        onChange={(t) => {
+          setTab(t);
+          setAddOpen(false);
+        }}
+        centerSlot={
+          showFloatingPlus ? (
+            <AddButton open={addOpen} onClick={() => setAddOpen((v) => !v)} />
+          ) : undefined
+        }
       />
     </div>
   );
