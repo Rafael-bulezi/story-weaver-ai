@@ -2,26 +2,42 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 const InvokeInput = z.object({
-  mode: z.enum(["writer", "critic", "debater", "chat"]),
+  mode: z.enum([
+    "writer",
+    "critic",
+    "debater",
+    "chat",
+    "extract",
+    "categorize",
+    "suggest_fix",
+    "cores_ask",
+  ]),
   action: z.string(),
-  story: z.string(),
-  lore: z.string(),
+  context: z.string(),
   userPrompt: z.string().optional().default(""),
 });
 
-const SYSTEM_BASE = `You are a story development assistant for a single-screen fiction workspace called Story Canvas.
-You always maintain continuity with the provided WORLD LORE.
+const SYSTEM_BASE = `You are a story development assistant for a fiction workspace called Story Canvas.
+You always maintain continuity with the provided WORLD CORES (canonical facts) and LORE.
 Write in a cinematic, restrained literary voice unless asked otherwise.
-Never break character with meta commentary. Respond ONLY with the requested content — no preambles like "Sure" or "Here is".`;
+Respond ONLY with the requested content — no preambles like "Sure" or "Here is".`;
 
 const MODE_PROMPT: Record<string, string> = {
   writer:
     "MODE: Writer. Expand or continue the scene with vivid sensory language, staying in the established tone. Keep it 2–4 short paragraphs unless asked otherwise.",
   critic:
-    "MODE: Critic. Read the scene and surface 2–4 concrete issues: plot holes, unclear motivation, continuity gaps, thin worldbuilding. Bullet points. Be direct, not verbose.",
+    "MODE: Critic. Read the material and surface 2–4 concrete issues: plot holes, unclear motivation, continuity gaps, thin worldbuilding. Bullet points. Be direct.",
   debater:
-    "MODE: Debater. Propose 2–3 bold alternate directions the story could take right now — each in one sentence, then one sentence on why it would work.",
-  chat: "MODE: Assistant. Answer the user about their story or world. Ground every answer in the provided lore and current scene.",
+    "MODE: Debater. Propose 2–3 bold alternate directions — each in one sentence, then one sentence on why it would work.",
+  chat: "MODE: Brainstorm. You are the user's writing partner. Answer questions about the story/world, propose ideas, riff. Ground every reply in the provided CORES and LORE. Keep replies conversational and focused.",
+  extract:
+    "MODE: Lore Extractor. Read the material and extract new characters, places, or concepts worth adding to the world lore. Return ONLY a bulleted list, one per line, in this exact format:\nTYPE — NAME — one-line description\nWhere TYPE is one of: CHARACTER, PLACE, CONCEPT. No preamble.",
+  categorize:
+    "MODE: Categorizer. Given a piece of brainstorm output, return a short 3–6 word topic title suitable as a Core title (Title Case, no punctuation). Return ONLY the title, nothing else.",
+  suggest_fix:
+    "MODE: Fix Suggester. Given a critic note, propose 3 concrete, distinct fix options. Return ONLY a bulleted list, one option per line, each 1–2 sentences. No preamble.",
+  cores_ask:
+    "MODE: Cores Librarian. Answer the user's question using ONLY the provided WORLD CORES. Be brief and factual. At the end, on a new line, output: SOURCES: <comma-separated core numbers you used, e.g. 1, 3>. If none apply, say so and output SOURCES: none.",
 };
 
 export const invokeAssistant = createServerFn({ method: "POST" })
@@ -30,7 +46,7 @@ export const invokeAssistant = createServerFn({ method: "POST" })
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("Missing LOVABLE_API_KEY");
 
-    const userMsg = `WORLD LORE:\n${data.lore}\n\nCURRENT SCENE:\n${data.story}\n\nUSER REQUEST:\n${data.action}${data.userPrompt ? `\n\nADDITIONAL:\n${data.userPrompt}` : ""}`;
+    const userMsg = `${data.context}\n\n---\n\nUSER REQUEST:\n${data.action}${data.userPrompt ? `\n\nADDITIONAL:\n${data.userPrompt}` : ""}`;
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
