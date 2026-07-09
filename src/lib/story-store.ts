@@ -533,3 +533,45 @@ export function buildBookContext(
   }
   return parts.join("\n\n---\n\n");
 }
+
+/** One-paragraph digest of every core — used as the always-on "Overview" context chip. */
+export function buildOverview(book: Book): string {
+  if (!book.cores.length) return `${book.name}: no cores yet.`;
+  const bits = book.cores.map((c, i) => {
+    const first = c.blocks[0];
+    const detail = first ? ` — ${first.title}: ${first.body}` : "";
+    return `Core ${i + 1} (${c.title})${detail}`;
+  });
+  const joined = bits.join(" · ");
+  return joined.length > 500 ? joined.slice(0, 497) + "…" : joined;
+}
+
+/** Build a scoped context from selected core / lore IDs. Includes overview + selected only. */
+export function buildSelectiveContext(
+  book: Book,
+  opts: {
+    overview?: boolean;
+    coreIds?: string[];
+    loreIds?: string[];
+    includeChapter?: boolean;
+    brainstormTail?: number;
+  },
+): string {
+  const parts: string[] = [`BOOK: ${book.name}\nCHAPTER: ${book.title}`];
+  if (opts.overview !== false) parts.push(`OVERVIEW:\n${buildOverview(book)}`);
+  const cores = book.cores.filter((c) => opts.coreIds?.includes(c.id));
+  if (cores.length) parts.push(`SELECTED CORES:\n${coresToPrompt(cores)}`);
+  const lore = book.lore.filter((l) => opts.loreIds?.includes(l.id));
+  if (lore.length) parts.push(`SELECTED LORE:\n${loreToPrompt(lore)}`);
+  if (opts.includeChapter && book.content.trim()) {
+    parts.push(`CURRENT CHAPTER TEXT:\n${book.content}`);
+  }
+  const tail = opts.brainstormTail ?? 0;
+  if (tail > 0 && book.brainstorm.length) {
+    const recent = book.brainstorm.slice(-tail);
+    parts.push(
+      `RECENT BRAINSTORM:\n${recent.map((m) => `${m.role.toUpperCase()}${m.mode ? `(${m.mode})` : ""}: ${m.content}`).join("\n")}`,
+    );
+  }
+  return parts.join("\n\n---\n\n");
+}
