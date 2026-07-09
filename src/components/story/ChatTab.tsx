@@ -1,13 +1,13 @@
-import { useMemo } from "react";
-import { Check, BookmarkPlus, Save, Loader2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Check, BookmarkPlus, Save, Loader2, BookMarked } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
 
 import type { BooksApi } from "@/lib/story-store";
 import { buildBookContext } from "@/lib/story-store";
 import { invokeAssistant } from "@/lib/ai.functions";
 import { cn } from "@/lib/utils";
+import { ChaptersSheet } from "@/components/story/ChaptersSheet";
 
 export function ChatTab({
   books,
