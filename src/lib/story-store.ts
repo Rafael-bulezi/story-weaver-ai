@@ -329,6 +329,22 @@ export function useBooks() {
     };
     updateBook(active.id, (b) => ({ chapters: [chapter, ...b.chapters] }));
   };
+  const setChapterType = (chapterId: string, type: ChapterType) => {
+    if (!active) return;
+    updateBook(active.id, (b) => ({
+      chapters: b.chapters.map((c) => (c.id === chapterId ? { ...c, type } : c)),
+    }));
+  };
+  const deleteChapter = (chapterId: string) => {
+    if (!active) return;
+    updateBook(active.id, (b) => ({ chapters: b.chapters.filter((c) => c.id !== chapterId) }));
+  };
+  const loadChapter = (chapterId: string) => {
+    if (!active) return;
+    const ch = active.chapters.find((c) => c.id === chapterId);
+    if (!ch) return;
+    updateBook(active.id, { title: ch.title, content: ch.content });
+  };
 
   // ---------- cores ----------
   const addCore = (input: { title: string; emoji?: string }) => {
