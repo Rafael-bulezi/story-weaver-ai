@@ -393,6 +393,36 @@ export function useBooks() {
       ),
     }));
   };
+  const addCoreAttachment = (coreId: string, file: File) => {
+    if (!active) return;
+    if (file.size > 3_000_000) throw new Error("File over 3MB — pick smaller.");
+    const reader = new FileReader();
+    reader.onload = () => {
+      const att: CoreAttachment = {
+        id: `at${Date.now()}${Math.random().toString(36).slice(2, 5)}`,
+        name: file.name,
+        mime: file.type || "application/octet-stream",
+        dataUrl: String(reader.result),
+        createdAt: Date.now(),
+      };
+      updateBook(active.id, (b) => ({
+        cores: b.cores.map((c) =>
+          c.id === coreId ? { ...c, attachments: [...(c.attachments ?? []), att] } : c,
+        ),
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+  const removeCoreAttachment = (coreId: string, attId: string) => {
+    if (!active) return;
+    updateBook(active.id, (b) => ({
+      cores: b.cores.map((c) =>
+        c.id === coreId
+          ? { ...c, attachments: (c.attachments ?? []).filter((a) => a.id !== attId) }
+          : c,
+      ),
+    }));
+  };
 
   // ---------- brainstorm ----------
   const addBrainstorm = (msg: Omit<BrainstormMessage, "id" | "createdAt">) => {
