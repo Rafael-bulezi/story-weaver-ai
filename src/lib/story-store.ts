@@ -28,11 +28,20 @@ export interface CoreBlock {
   body: string;
 }
 
+export interface CoreAttachment {
+  id: string;
+  name: string;
+  mime: string;
+  dataUrl: string;
+  createdAt: number;
+}
+
 export interface Core {
   id: string;
   title: string;
   emoji?: string;
   blocks: CoreBlock[];
+  attachments?: CoreAttachment[];
 }
 
 export interface BrainstormMessage {
