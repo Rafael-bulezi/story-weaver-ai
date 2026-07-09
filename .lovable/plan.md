@@ -1,132 +1,110 @@
+# Story Canvas — UX Revamp Plan
 
-# Story Canvas — Structural refactor plan
+Scope: light theme stays. Colors unchanged. Focus is UX + interaction + one new tab.
 
-## 1. Navigation model
-Replace the current `Write / World / Chapter` tabs with **4 icon-only** bottom nav buttons, present on every page:
+## 1. Lore "+" menu polish
+- Fix visual overlap: floating `+` currently sits centered on the 4-tab nav row, overlapping the Lore icon. Move it **above** the nav row (translate further up: `-translate-y-9`) and shrink to 44px.
+- Smooth blur backdrop: `backdrop-blur-md bg-black/25` with `animate-in fade-in duration-200`.
+- Icon menu (Character / Place / Concept / Generate Image): slide **down** from the + with staggered `translate-y` + opacity, `cubic-bezier(0.22, 1, 0.36, 1)`, 180ms, 40ms stagger per item.
+- Dismiss on: outside tap, Escape, tab switch (close in a `useEffect` on tab change).
 
-```text
-                        [ + ]        ← contextual add (Lore tab only)
-[ ✍ Chat ]  [ 💡 Brainstorm ]  [ 📖 Lore ]  [ ◇ Cores ]
+## 2. Cores "+" menu (mirrors Lore)
+Replace the current inline `+ New` with a floating `+` (same component). Two options in a blurred popover:
+- **Add Core** (creates numbered core, inline edit title)
+- **Attach File** (file input → stored as base64 dataURL on a new `CoreAttachment { id, name, mime, dataUrl }[]` on the Core). Renders as a chip under the core title; tap to open in new tab.
+
+Same animation system as Lore.
+
+## 3. New 5th nav tab: **Studio**
+Bottom nav becomes 5 icons: `Chat · Brainstorm · Lore · Cores · Studio`.
+- Studio = creative-hub dashboard for the current book:
+  - Big "Continue Writing" card → jumps to Chat.
+  - Stat tiles: Chapters count, Lore count, Cores count, Words.
+  - Recent chapters list (tap → loads into Chat as current title/content? No — read-only preview + "Open in Chat" button which sets active chapter).
+- Icon: `Sparkle` or `LayoutDashboard` (lucide).
+- Keep icon-only with tiny label; grid becomes `grid-cols-5`.
+
+## 4. Chapters tab (top-right, adjacent to book icon in Chat header)
+Not a bottom-nav tab — a **header sheet** launched from a `BookMarked` icon top-right in the Chat header (next to existing sidebar trigger).
+- Opens right-side Sheet: two sections **Canon** and **Drafts**.
+- Draft row: title, timestamp, `Edit` (loads into Chat as active), `Move → Canon` (arrow-up icon), `Delete` (trash, with confirm dialog).
+- Canon row: title, timestamp, `Edit` (loads into Chat), `Move → Draft` (arrow-down). **No delete.**
+- Confirmation: shadcn `AlertDialog` for draft delete.
+- Requires store additions: `promoteToCanon(id)`, `demoteToDraft(id)`, `deleteDraft(id)`, `loadChapterIntoActive(id)`.
+
+## 5. Brainstorm rewrite — fluid ChatGPT-style
+Current system prompt forces 2–3 bullets and terseness. Change:
+- **Chat mode (Brainstorm default)**: remove forced-bullets rule. New prompt: "You are the user's creative writing partner with full memory of their book's Cores and Lore. Answer conversationally, matching the user's requested length precisely. When the user asks for something (e.g. 'create an antagonist'), explain your reasoning briefly *why* you designed it that way, then the design itself. If they ask for N lines, give exactly N."
+- Keep Critic + Debater modes as-is (they're already working).
+- Add third pill: **Rewrite** — takes the last user↔assistant pair and produces a stronger version of the assistant's reply.
+- Memory: full brainstorm history sent (already trimmed with rolling tail) + `buildBookContext` with condensed cores/lore, no full chapter unless "Include chapter" toggled.
+
+## 6. Context strip (`Using: <Overview> <Zeal> +`)
+Above every AI composer (Chat AI actions, Brainstorm, Cores Ask):
+```
+Using:  [◆ Overview]  [Zeal]  [Nyra]  [+]
+```
+- Chips are removable (× on hover). Tap `+` opens a sheet: "Add to context" listing all Cores, Characters, Places, Concepts.
+- **First chip is always `Overview`** = auto-generated one-paragraph digest of all cores (built by `buildOverview(book)` — first line of each core concatenated, capped ~400 chars). Non-removable.
+- Selected chip IDs stored per-tab in component state (not persisted for MVP).
+- Prompt builder uses selected chips instead of dumping all cores/lore when chips are present. If only Overview, sends the digest.
+
+## 7. Composer redesign (inspired by uploaded darks)
+For Brainstorm + Cores Ask:
+```
+[+]  [ Ask anything… __________________ ]  [ ⋯→ ]  [ @ ]  [ ↑ ]
+```
+- `+`: opens the same "Add to context" sheet (equivalent to chip strip's +).
+- `@`: quick-mention picker (jump to a specific lore/core entity, inserts `@Name` token into input).
+- `↑`: send.
+- `⋯`: replace the three-dots with `SlidersHorizontal` (lucide) — opens a small menu for mode toggles (Include chapter, temperature preset, etc.). Just a placeholder menu for now with `Include chapter text` switch.
+
+## 8. Animations
+Consolidate into `src/styles.css` utility classes:
+- `.animate-slide-up-fade` (14px, 200ms, cubic-bezier(0.22,1,0.36,1))
+- `.animate-slide-down-fade`
+- Backdrop `.animate-blur-in` (backdrop-blur 0 → 8px, 180ms)
+- Stagger via `style={{ animationDelay: `${i*40}ms` }}`.
+Apply to Lore +, Cores +, sheets, chapter drawer open.
+
+## 9. Lore & Cores light revamp
+- Lore: cards get subtle hover lift (`transition-shadow`, shadow-sm→shadow-md), rounded-2xl, image thumbnails 44×44 with `object-cover`.
+- Cores: card headers get numbered chip `◆ 1`, subcards indent with a left-border, subcard bullets show `1.1`, `1.2` inline. Add file-chip row below title.
+
+## 10. Data model additions (`story-store.ts`, still `sc:books:v4` — additive)
+- `Core.attachments?: CoreAttachment[]`
+- `CoreAttachment { id, name, mime, dataUrl, createdAt }`
+- Store fns: `addCoreAttachment(bookId, coreId, file)`, `removeCoreAttachment(...)`, `promoteChapter(id)`, `demoteChapter(id)`, `deleteChapter(id)`, `loadChapter(id)`, `buildOverview(book)`.
+
+## 11. Files touched / added
+```
+NEW  src/components/story/StudioTab.tsx
+NEW  src/components/story/ChaptersSheet.tsx
+NEW  src/components/story/ContextStrip.tsx
+NEW  src/components/story/AiComposer.tsx (shared composer)
+NEW  src/components/story/FloatingAddMenu.tsx (generic version — Lore + Cores share)
+EDIT src/components/story/BottomNav.tsx (5 cols)
+EDIT src/components/story/LoreTab.tsx (use FloatingAddMenu, revamp cards)
+EDIT src/components/story/CoresTab.tsx (FloatingAddMenu, attachments, ContextStrip on Ask)
+EDIT src/components/story/BrainstormTab.tsx (ContextStrip, AiComposer, Rewrite pill, fluid replies)
+EDIT src/components/story/ChatTab.tsx (Chapters sheet trigger in header)
+EDIT src/lib/story-store.ts (types + fns + overview builder)
+EDIT src/lib/ai.functions.ts (relaxed brainstorm prompt, add "rewrite" mode)
+EDIT src/routes/index.tsx (5-tab switch, add "studio", pass editorRef)
+EDIT src/styles.css (animation utilities)
 ```
 
-- Rename `Writer` → `Chat` in labels (tooltip only, icon-first).
-- Remove the "World" tab — it's redundant with Lore.
-- Remove the separate `Chapter` tab; chapter title lives inside Chat header (see §7).
-- Each tab renders its own **secondary action row** ABOVE the nav (not more pills at the bottom):
-  - **Chat tab:** `[ Extract Lore ]   [ Save Chapter ]`
-  - **Brainstorm tab:** `[ Critic ]   [ Debater ]` (contextual, feed off the current brainstorm chat)
-  - **Lore tab:** floating `+` above nav center → opens add-menu (Character / Place / Concept / Generate Image) with a soft backdrop blur; tap outside dismisses.
-  - **Cores tab:** `[ + New ] [ Ask anything… ______________ ]` composer row.
+## 12. Out of scope this pass
+- Cloud sync / cross-device.
+- Real file parsing for attached files (just stored + downloadable).
+- @-mention autocomplete (button opens sheet only).
+- Persisting selected context chips.
 
-## 2. Chat tab (was Writer)
-- The main writing canvas (serif prose editor) stays.
-- Header shows **chapter title** (editable), not book title. Book title is edited only in Sidebar / Library.
-- Bottom actions: `Extract Lore`, `Save Chapter` (both keep current behavior; extracted items auto-route into Characters/Places/Concepts via existing `importExtractedLore`).
-
-## 3. Brainstorm tab (new dedicated page)
-- Full chat surface with the AI — this is where you brainstorm the story.
-- Two secondary pills **Critic** and **Debater** operate on the current brainstorm chat context (not on the chapter text), so the main story canvas stays clean.
-- Every assistant message card gets:
-  - `×` close/delete button (top-right)
-  - `Copy` (unchanged clipboard)
-  - `Append` → inserts text into the Chat/Writer canvas **at cursor position, moving forward** (needs a cursor-position ref stored from the Chat tab's textarea).
-  - `Insert → Core` → the AI categorizes the response, creates a **new Core** numbered `last + 1`, titled from the topic.
-- **Critic cards additionally get "Suggest Fix"**:
-  - Opens a panel listing 2–4 concrete fix options (AI-generated).
-  - Each option has an "Add to…" dropdown listing all cores; selecting a core reveals two choices:
-    - `Add as new sub-card` → appended as `N.(last+1) > <title>`
-    - `Add as new Core` → creates Core `last+1`
-- Brainstorm messages are kept in memory per-book but only a **short rolling window** is fed back into prompts (see §6).
-
-## 4. Lore tab
-- Keep current Characters / Places / Concepts groups with in-place edit.
-- Add **image** field to `LoreItem` (`imageUrl?: string`).
-  - Small thumbnail beside the item name; tap to view full.
-  - Each item edit form gets `Attach image` (file → base64/dataURL in localStorage) and `Generate image` (calls Lovable AI image gen with a prompt seeded from name+description).
-- Remove any inline Critic/Extract/Back buttons from this tab — only the 4 nav + the floating `+`.
-- Floating `+` above center of nav opens a blurred-backdrop popover with 4 buttons: Character, Place, Concept, Generate Image.
-
-## 5. Cores tab (promoted to its own page)
-- Numbered display:
-  ```text
-  ◇ Core 1 — State of the World
-     1.1  Era
-     1.2  Technology
-  ◇ Core 2 — Magic System
-     2.1  …
-  ```
-- Numbering is derived from array position (not persisted), so reordering later is trivial.
-- Bottom composer: `[+ New]  [ Ask anything… ]`
-  - `New` creates a Core (title inline-editable).
-  - `Ask` sends the question to AI with **all cores** as context; response appears above with a "Sources" footer listing which cores were referenced.
-- Existing per-core edit / add-block controls remain (styled to match numbering).
-
-## 6. Context / memory system
-Central builder `buildBookContext(book, { includeChapterText, brainstormTail })`:
-- Always includes: book title, chapter title, **all cores** (highest priority), condensed lore (name + one-line desc).
-- Chat tab requests → include full current chapter text.
-- Brainstorm requests → include only the **last N (default 8)** brainstorm messages + condensed cores + condensed lore, NOT the full chapter text unless the user pill "Include chapter" is toggled (small toggle beside Critic/Debater).
-- Cores "Ask anything" → cores only, no chapter, no lore, no chat history.
-- Extract Lore / Save Chapter unchanged.
-
-## 7. Data model additions (`story-store.ts`)
-- `LoreItem`: add `imageUrl?: string`.
-- `Book`: add `brainstorm: BrainstormMessage[]` where `BrainstormMessage = { id, role: 'user'|'assistant', mode?: 'chat'|'critic'|'debater', content, createdAt }`.
-- `Chapter` unchanged; chapter title editing now writes to `active.title` for the active in-progress chapter (or, if we split book vs chapter titles, add `book.name` distinct from chapter — see §8).
-- Migrate store key to `sc:books:v4` with a one-time migrator that fills defaults.
-
-## 8. Book vs chapter title separation
-- Add `Book.name` (book title, edited in Sidebar/Library).
-- Keep `Book.title` as the **current chapter title** (edited in Chat header) OR rename fields for clarity: `book.name` + `book.currentChapterTitle`. Migrator maps old `title` → `name` and seeds `currentChapterTitle` from subtitle.
-
-## 9. File split (files are getting large)
-Break `src/routes/index.tsx` and `src/lib/story-store.ts` into:
-```
-src/lib/
-  store/
-    books.ts              (Book CRUD + persistence)
-    lore.ts               (lore ops + importExtracted)
-    chapters.ts           (chapter ops)
-    cores.ts              (cores ops + numbering helpers)
-    brainstorm.ts         (brainstorm history ops)
-    context.ts            (buildBookContext, loreToPrompt, coresToPrompt)
-    types.ts              (all shared types)
-    index.ts              (re-exports + useBooks hook)
-  ai/
-    ai.functions.ts       (existing invokeAssistant, updated system prompts)
-    image.functions.ts    (new: generate lore image via Lovable AI image gen)
-src/components/story/
-  BottomNav.tsx           (4 icon nav + optional floating +)
-  ChatTab.tsx
-  BrainstormTab.tsx
-    MessageCard.tsx       (× delete, copy, append, insert→core, suggest-fix)
-    SuggestFixPanel.tsx
-  LoreTab.tsx
-    LoreItemCard.tsx
-    LoreImagePicker.tsx
-    AddLorePopover.tsx    (blurred backdrop + icon menu)
-  CoresTab.tsx
-    CoreCard.tsx
-    CoresAskBar.tsx
-  Sidebar.tsx             (library + settings, book-title edit)
-src/routes/index.tsx      (thin shell: sidebar + active tab + BottomNav)
-```
-
-## 10. Small UX polish
-- Icon-only pills (lucide) with `aria-label`; tooltip on hover for desktop.
-- Floating `+` uses `backdrop-blur-sm bg-black/20` overlay; tap-away dismisses; icons slide up with a short transform/opacity transition.
-- Assistant message `×` on hover (always visible on mobile).
-- Chapter title input: single-line, no book-title confusion; helper text "Book title: edit in sidebar".
-
-## 11. Out of scope for this pass
-- Cloud sync / Supabase.
-- Streaming responses.
-- Reordering cores via drag-drop (numbering is positional; reorder UI can come later).
-
-## Verification steps after build
-1. All 4 nav buttons visible on every tab; no legacy World/Chapter tabs.
-2. Chat: extract & save chapter work; chapter title edits do not rename book.
-3. Brainstorm: send message → get reply → × removes it; append inserts at cursor in Chat; insert→core creates numbered core; Critic → Suggest Fix opens options → add to specific core/subcard writes correctly.
-4. Lore: add via floating +, attach image, generate image via AI, thumbnails render.
-5. Cores: numbered display, Ask returns answer with source cores listed.
-6. Context: brainstorm prompt payload contains cores + lore + tail messages, not full chapter, unless toggled.
+## Verify after build
+1. Lore `+` sits above nav, no overlap; opens with blur + slide-down icons; closes on outside tap and on tab change.
+2. Cores `+` shows 2 options; Attach File stores + shows chip.
+3. Studio tab appears as 5th nav item, shows stats + recent chapters + continue writing.
+4. Chat header shows book icon (chapters); opens sheet with canon/drafts; move works both ways; draft delete asks confirmation; canon has no delete.
+5. Brainstorm: "give me a 2 line explanation of X" returns ~2 lines; "create an antagonist" returns prose with reasoning; Rewrite pill improves last assistant reply.
+6. Context strip renders on Brainstorm + Cores Ask; Overview chip non-removable; adding chips restricts prompt context.
+7. Composer uses `+ / @ / ⋯ / ↑` layout; `⋯` uses `SlidersHorizontal` not three dots.
