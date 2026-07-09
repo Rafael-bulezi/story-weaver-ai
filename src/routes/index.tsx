@@ -1,17 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { Menu, Plus, Library } from "lucide-react";
-import { toast } from "sonner";
 
 import { Sheet, SheetTrigger } from "@/components/ui/sheet";
-import { useBooks, type LoreType } from "@/lib/story-store";
+import { useBooks } from "@/lib/story-store";
 import { BottomNav, type NavTab } from "@/components/story/BottomNav";
 import { ChatTab } from "@/components/story/ChatTab";
 import { BrainstormTab } from "@/components/story/BrainstormTab";
-import { LoreTab, LoreEditor } from "@/components/story/LoreTab";
+import { LoreTab } from "@/components/story/LoreTab";
 import { CoresTab } from "@/components/story/CoresTab";
+import { StudioTab } from "@/components/story/StudioTab";
 import { SideMenu } from "@/components/story/SideMenu";
-import { AddButton, AddLoreOverlay } from "@/components/story/AddLorePopover";
 
 export const Route = createFileRoute("/")({
   component: StoryCanvasApp,
@@ -37,8 +36,6 @@ function StoryCanvasApp() {
   const active = books.active;
   const [tab, setTab] = useState<NavTab>("chat");
   const [sideOpen, setSideOpen] = useState(false);
-  const [addOpen, setAddOpen] = useState(false);
-  const [pendingLore, setPendingLore] = useState<LoreType | null>(null);
   const editorRef = useRef<HTMLTextAreaElement | null>(null);
 
   // ============ LIBRARY VIEW ============
@@ -109,8 +106,6 @@ function StoryCanvasApp() {
   }
 
   // ============ BOOK VIEW ============
-  const showFloatingPlus = tab === "lore";
-
   return (
     <div className="flex h-[100dvh] flex-col bg-background text-foreground">
       {/* Top bar */}
@@ -148,71 +143,17 @@ function StoryCanvasApp() {
         )}
         {tab === "lore" && <LoreTab books={books} />}
         {tab === "cores" && <CoresTab books={books} />}
-
-        {/* Add-lore overlay */}
-        {addOpen && (
-          <AddLoreOverlay
-            onClose={() => setAddOpen(false)}
-            onPick={(t) => {
-              setAddOpen(false);
-              if (t === "image") {
-                toast.info("Pick an item to attach the generated image, or create one first.");
-                setPendingLore("character");
-              } else {
-                setPendingLore(t);
-              }
-            }}
+        {tab === "studio" && (
+          <StudioTab
+            books={books}
+            onOpenChat={() => setTab("chat")}
+            onOpenLore={() => setTab("lore")}
+            onOpenCores={() => setTab("cores")}
           />
-        )}
-
-        {/* Inline add editor overlay */}
-        {pendingLore && (
-          <div
-            className="fixed inset-0 z-40 flex items-end bg-black/40"
-            onClick={() => setPendingLore(null)}
-          >
-            <div
-              onClick={(e) => e.stopPropagation()}
-              className="w-full rounded-t-3xl border-t border-border bg-background p-4 pb-[calc(env(safe-area-inset-bottom)+80px)]"
-            >
-              <div className="mx-auto max-w-lg">
-                <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-                  New {pendingLore}
-                </div>
-                <LoreEditor
-                  initialType={pendingLore}
-                  onCancel={() => setPendingLore(null)}
-                  onSave={(v) => {
-                    books.addLore({
-                      type: v.type ?? pendingLore,
-                      name: v.name,
-                      role: v.role,
-                      description: v.description,
-                      imageUrl: v.imageUrl,
-                    });
-                    setPendingLore(null);
-                    toast.success("Added to lore");
-                  }}
-                />
-              </div>
-            </div>
-          </div>
         )}
       </main>
 
-      {/* Bottom nav */}
-      <BottomNav
-        tab={tab}
-        onChange={(t) => {
-          setTab(t);
-          setAddOpen(false);
-        }}
-        centerSlot={
-          showFloatingPlus ? (
-            <AddButton open={addOpen} onClick={() => setAddOpen((v) => !v)} />
-          ) : undefined
-        }
-      />
+      <BottomNav tab={tab} onChange={setTab} />
     </div>
   );
 }

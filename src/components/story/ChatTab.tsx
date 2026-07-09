@@ -1,13 +1,13 @@
-import { useMemo } from "react";
-import { Check, BookmarkPlus, Save, Loader2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Check, BookmarkPlus, Save, Loader2, BookMarked } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
 
 import type { BooksApi } from "@/lib/story-store";
 import { buildBookContext } from "@/lib/story-store";
 import { invokeAssistant } from "@/lib/ai.functions";
 import { cn } from "@/lib/utils";
+import { ChaptersSheet } from "@/components/story/ChaptersSheet";
 
 export function ChatTab({
   books,
@@ -52,15 +52,28 @@ export function ChatTab({
   return (
     <div className="flex h-full flex-col">
       <div className="mx-auto flex h-full w-full max-w-2xl flex-col px-5 pt-4">
-        <input
-          aria-label="Chapter title"
-          value={active.title}
-          onChange={(e) => books.updateBook(active.id, { title: e.target.value })}
-          placeholder="Chapter title"
-          className="mb-1 bg-transparent font-serif text-2xl font-semibold outline-none"
-        />
+        <div className="mb-1 flex items-start justify-between gap-2">
+          <input
+            aria-label="Chapter title"
+            value={active.title}
+            onChange={(e) => books.updateBook(active.id, { title: e.target.value })}
+            placeholder="Chapter title"
+            className="min-w-0 flex-1 bg-transparent font-serif text-2xl font-semibold outline-none"
+          />
+          <ChaptersSheet
+            books={books}
+            trigger={
+              <button
+                aria-label="Chapters"
+                className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border/70 bg-card hover:bg-muted"
+              >
+                <BookMarked className="h-4 w-4" />
+              </button>
+            }
+          />
+        </div>
         <div className="mb-2 text-[10px] text-muted-foreground">
-          Book: <span className="font-medium">{active.name}</span> · edit book title in the sidebar
+          Book: <span className="font-medium">{active.name}</span> · edit book title in sidebar
         </div>
         <textarea
           ref={editorRef}

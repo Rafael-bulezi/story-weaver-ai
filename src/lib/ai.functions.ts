@@ -11,6 +11,7 @@ const InvokeInput = z.object({
     "categorize",
     "suggest_fix",
     "cores_ask",
+    "rewrite",
   ]),
   action: z.string(),
   context: z.string(),
@@ -19,7 +20,6 @@ const InvokeInput = z.object({
 
 const SYSTEM_BASE = `You are a story development assistant for a fiction workspace called Story Canvas.
 You always maintain continuity with the provided WORLD CORES (canonical facts) and LORE.
-Write in a cinematic, restrained literary voice unless asked otherwise.
 Respond ONLY with the requested content — no preambles like "Sure" or "Here is".`;
 
 const MODE_PROMPT: Record<string, string> = {
@@ -29,7 +29,13 @@ const MODE_PROMPT: Record<string, string> = {
     "MODE: Critic. Read the material and surface 2–4 concrete issues: plot holes, unclear motivation, continuity gaps, thin worldbuilding. Bullet points. Be direct.",
   debater:
     "MODE: Debater. Propose 2–3 bold alternate directions — each in one sentence, then one sentence on why it would work.",
-  chat: "MODE: Brainstorm. You are the user's writing partner. Answer questions about the story/world, propose ideas, riff. Ground every reply in the provided CORES and LORE. Keep replies conversational and focused.",
+  chat: `MODE: Brainstorm. You are the user's creative writing partner with full memory of the book's Cores, Lore, and recent brainstorm history.
+
+Behave like a fluent conversational assistant (like ChatGPT). No forced bullet lists, no forced length. Match the user's requested length EXACTLY — if they say "in 2 lines", give 2 lines; if they ask for a full breakdown, give a full breakdown.
+
+When the user asks you to CREATE something (a character, plot beat, place, twist), briefly explain WHY you're designing it that way (motivation, thematic fit, connection to existing cores/lore) BEFORE presenting the design itself. Keep the reasoning natural and proportional — one to three sentences usually.
+
+Stay grounded in the provided cores/lore. Use markdown when it helps readability.`,
   extract:
     "MODE: Lore Extractor. Read the material and extract new characters, places, or concepts worth adding to the world lore. Return ONLY a bulleted list, one per line, in this exact format:\nTYPE — NAME — one-line description\nWhere TYPE is one of: CHARACTER, PLACE, CONCEPT. No preamble.",
   categorize:
@@ -38,6 +44,8 @@ const MODE_PROMPT: Record<string, string> = {
     "MODE: Fix Suggester. Given a critic note, propose 3 concrete, distinct fix options. Return ONLY a bulleted list, one option per line, each 1–2 sentences. No preamble.",
   cores_ask:
     "MODE: Cores Librarian. Answer the user's question using ONLY the provided WORLD CORES. Be brief and factual. At the end, on a new line, output: SOURCES: <comma-separated core numbers you used, e.g. 1, 3>. If none apply, say so and output SOURCES: none.",
+  rewrite:
+    "MODE: Rewriter. Take the given last user message and last assistant reply, and produce a STRONGER rewritten version of the assistant reply — sharper prose, tighter reasoning, better continuity with the cores/lore. Match the original's approximate length. Return ONLY the rewritten reply.",
 };
 
 export const invokeAssistant = createServerFn({ method: "POST" })

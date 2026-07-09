@@ -28,11 +28,20 @@ export interface CoreBlock {
   body: string;
 }
 
+export interface CoreAttachment {
+  id: string;
+  name: string;
+  mime: string;
+  dataUrl: string;
+  createdAt: number;
+}
+
 export interface Core {
   id: string;
   title: string;
   emoji?: string;
   blocks: CoreBlock[];
+  attachments?: CoreAttachment[];
 }
 
 export interface BrainstormMessage {
@@ -320,6 +329,22 @@ export function useBooks() {
     };
     updateBook(active.id, (b) => ({ chapters: [chapter, ...b.chapters] }));
   };
+  const setChapterType = (chapterId: string, type: ChapterType) => {
+    if (!active) return;
+    updateBook(active.id, (b) => ({
+      chapters: b.chapters.map((c) => (c.id === chapterId ? { ...c, type } : c)),
+    }));
+  };
+  const deleteChapter = (chapterId: string) => {
+    if (!active) return;
+    updateBook(active.id, (b) => ({ chapters: b.chapters.filter((c) => c.id !== chapterId) }));
+  };
+  const loadChapter = (chapterId: string) => {
+    if (!active) return;
+    const ch = active.chapters.find((c) => c.id === chapterId);
+    if (!ch) return;
+    updateBook(active.id, { title: ch.title, content: ch.content });
+  };
 
   // ---------- cores ----------
   const addCore = (input: { title: string; emoji?: string }) => {
@@ -368,6 +393,36 @@ export function useBooks() {
       ),
     }));
   };
+  const addCoreAttachment = (coreId: string, file: File) => {
+    if (!active) return;
+    if (file.size > 3_000_000) throw new Error("File over 3MB — pick smaller.");
+    const reader = new FileReader();
+    reader.onload = () => {
+      const att: CoreAttachment = {
+        id: `at${Date.now()}${Math.random().toString(36).slice(2, 5)}`,
+        name: file.name,
+        mime: file.type || "application/octet-stream",
+        dataUrl: String(reader.result),
+        createdAt: Date.now(),
+      };
+      updateBook(active.id, (b) => ({
+        cores: b.cores.map((c) =>
+          c.id === coreId ? { ...c, attachments: [...(c.attachments ?? []), att] } : c,
+        ),
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+  const removeCoreAttachment = (coreId: string, attId: string) => {
+    if (!active) return;
+    updateBook(active.id, (b) => ({
+      cores: b.cores.map((c) =>
+        c.id === coreId
+          ? { ...c, attachments: (c.attachments ?? []).filter((a) => a.id !== attId) }
+          : c,
+      ),
+    }));
+  };
 
   // ---------- brainstorm ----------
   const addBrainstorm = (msg: Omit<BrainstormMessage, "id" | "createdAt">) => {
@@ -403,12 +458,17 @@ export function useBooks() {
     removeLore,
     importExtractedLore,
     saveChapter,
+    setChapterType,
+    deleteChapter,
+    loadChapter,
     addCore,
     updateCore,
     removeCore,
     addCoreBlock,
     updateCoreBlock,
     removeCoreBlock,
+    addCoreAttachment,
+    removeCoreAttachment,
     addBrainstorm,
     removeBrainstorm,
     clearBrainstorm,
@@ -469,6 +529,48 @@ export function buildBookContext(
     const recent = book.brainstorm.slice(-tail);
     parts.push(
       `RECENT BRAINSTORM (chronological):\n${recent.map((m) => `${m.role.toUpperCase()}${m.mode ? `(${m.mode})` : ""}: ${m.content}`).join("\n")}`,
+    );
+  }
+  return parts.join("\n\n---\n\n");
+}
+
+/** One-paragraph digest of every core — used as the always-on "Overview" context chip. */
+export function buildOverview(book: Book): string {
+  if (!book.cores.length) return `${book.name}: no cores yet.`;
+  const bits = book.cores.map((c, i) => {
+    const first = c.blocks[0];
+    const detail = first ? ` — ${first.title}: ${first.body}` : "";
+    return `Core ${i + 1} (${c.title})${detail}`;
+  });
+  const joined = bits.join(" · ");
+  return joined.length > 500 ? joined.slice(0, 497) + "…" : joined;
+}
+
+/** Build a scoped context from selected core / lore IDs. Includes overview + selected only. */
+export function buildSelectiveContext(
+  book: Book,
+  opts: {
+    overview?: boolean;
+    coreIds?: string[];
+    loreIds?: string[];
+    includeChapter?: boolean;
+    brainstormTail?: number;
+  },
+): string {
+  const parts: string[] = [`BOOK: ${book.name}\nCHAPTER: ${book.title}`];
+  if (opts.overview !== false) parts.push(`OVERVIEW:\n${buildOverview(book)}`);
+  const cores = book.cores.filter((c) => opts.coreIds?.includes(c.id));
+  if (cores.length) parts.push(`SELECTED CORES:\n${coresToPrompt(cores)}`);
+  const lore = book.lore.filter((l) => opts.loreIds?.includes(l.id));
+  if (lore.length) parts.push(`SELECTED LORE:\n${loreToPrompt(lore)}`);
+  if (opts.includeChapter && book.content.trim()) {
+    parts.push(`CURRENT CHAPTER TEXT:\n${book.content}`);
+  }
+  const tail = opts.brainstormTail ?? 0;
+  if (tail > 0 && book.brainstorm.length) {
+    const recent = book.brainstorm.slice(-tail);
+    parts.push(
+      `RECENT BRAINSTORM:\n${recent.map((m) => `${m.role.toUpperCase()}${m.mode ? `(${m.mode})` : ""}: ${m.content}`).join("\n")}`,
     );
   }
   return parts.join("\n\n---\n\n");
