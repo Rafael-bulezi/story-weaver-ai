@@ -9,6 +9,7 @@ import {
   Pencil,
   X,
   ImageIcon,
+  ImagePlus,
   Wand2,
   Loader2,
   Upload,
@@ -20,12 +21,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { FloatingAddMenu } from "@/components/story/FloatingAddMenu";
 
 export function LoreTab({ books }: { books: BooksApi }) {
   const active = books.active!;
   const [tab, setTab] = useState<LoreType>("character");
   const filtered = active.lore.filter((i) => i.type === tab);
   const [viewImage, setViewImage] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [pending, setPending] = useState<LoreType | null>(null);
 
   const tabs: { id: LoreType; label: string; icon: React.ElementType }[] = [
     { id: "character", label: "Characters", icon: User },
@@ -34,7 +38,7 @@ export function LoreTab({ books }: { books: BooksApi }) {
   ];
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-2xl flex-col">
+    <div className="relative mx-auto flex h-full w-full max-w-2xl flex-col">
       <div className="flex items-center gap-1 border-b border-border/60 px-3 py-2">
         {tabs.map(({ id, label, icon: Icon }) => {
           const count = active.lore.filter((i) => i.type === id).length;
@@ -53,11 +57,10 @@ export function LoreTab({ books }: { books: BooksApi }) {
           );
         })}
       </div>
-      <div className="no-scrollbar flex-1 space-y-2 overflow-y-auto px-4 py-4">
+      <div className="no-scrollbar flex-1 space-y-2 overflow-y-auto px-4 py-4 pb-28">
         {filtered.length === 0 && (
           <div className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-            Nothing here yet. Use the <span className="font-medium">+</span> button above the nav to
-            add one.
+            Nothing here yet. Use the <span className="font-medium">+</span> button above the nav.
           </div>
         )}
         {filtered.map((item) => (
@@ -74,14 +77,66 @@ export function LoreTab({ books }: { books: BooksApi }) {
         ))}
       </div>
 
+      {pending && (
+        <div
+          className="animate-soft-fade-in fixed inset-0 z-50 flex items-end bg-black/40 backdrop-blur-sm"
+          onClick={() => setPending(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="animate-slide-up-fade w-full rounded-t-3xl border-t border-border bg-background p-4 pb-[calc(env(safe-area-inset-bottom)+80px)]"
+          >
+            <div className="mx-auto max-w-lg">
+              <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                New {pending}
+              </div>
+              <LoreEditor
+                initialType={pending}
+                onCancel={() => setPending(null)}
+                onSave={(v) => {
+                  books.addLore({
+                    type: v.type ?? pending,
+                    name: v.name,
+                    role: v.role,
+                    description: v.description,
+                    imageUrl: v.imageUrl,
+                  });
+                  setPending(null);
+                  toast.success("Added to lore");
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {viewImage && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6"
+          className="animate-soft-fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6"
           onClick={() => setViewImage(null)}
         >
           <img src={viewImage} alt="Lore" className="max-h-full max-w-full rounded-xl" />
         </div>
       )}
+
+      <FloatingAddMenu
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        options={[
+          { id: "char", label: "Character", icon: User, onClick: () => setPending("character") },
+          { id: "place", label: "Place", icon: MapPin, onClick: () => setPending("place") },
+          { id: "concept", label: "Concept", icon: Lightbulb, onClick: () => setPending("concept") },
+          {
+            id: "image",
+            label: "Generate Image",
+            icon: ImagePlus,
+            onClick: () => {
+              setPending("character");
+              toast.info("Add a character/place/concept then tap Generate.");
+            },
+          },
+        ]}
+      />
     </div>
   );
 }
@@ -112,7 +167,7 @@ function LoreRow({
     );
   }
   return (
-    <div className="group rounded-2xl border border-border/70 bg-card p-3">
+    <div className="group rounded-2xl border border-border/70 bg-card p-3 transition-shadow hover:shadow-md">
       <div className="flex items-start gap-3">
         {item.imageUrl ? (
           <button onClick={onViewImage} className="h-12 w-12 shrink-0 overflow-hidden rounded-xl">
