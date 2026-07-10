@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Check, BookmarkPlus, Save, Loader2, BookMarked } from "lucide-react";
-import { toast } from "sonner";
+import { toastSuccess, toastError } from "@/lib/toast";
 import { useServerFn } from "@tanstack/react-start";
 
 import type { BooksApi } from "@/lib/story-store";
@@ -34,10 +34,10 @@ export function ChatTab({
         data: { mode: "extract", action: "Extract new lore from the current chapter.", context },
       });
       const n = books.importExtractedLore(content);
-      if (n > 0) toast.success(`Added ${n} item${n === 1 ? "" : "s"} to lore`);
-      else toast.error("Nothing recognizable to extract");
+      if (n > 0) toastSuccess(`Added ${n} item${n === 1 ? "" : "s"} to lore`);
+      else toastError("Nothing recognizable to extract");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Extraction failed");
+      toastError(e instanceof Error ? e.message : "Extraction failed");
     } finally {
       setBusy(null);
     }
@@ -46,7 +46,7 @@ export function ChatTab({
   function saveChapter(type: "draft" | "canon") {
     books.saveChapter(type);
     setSaveOpen(false);
-    toast.success(type === "canon" ? "Pushed to canon" : "Saved as draft");
+    toastSuccess(type === "canon" ? "Pushed to canon" : "Saved as draft");
   }
 
   return (

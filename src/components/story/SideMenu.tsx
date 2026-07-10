@@ -1,6 +1,6 @@
 import { SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Library, Plus, X, ChevronLeft, Download, Trash2, Pencil } from "lucide-react";
-import { toast } from "sonner";
+import { toastSuccess, toastError } from "@/lib/toast";
 import { useState } from "react";
 import type { BooksApi } from "@/lib/story-store";
 import { cn } from "@/lib/utils";
@@ -141,7 +141,7 @@ function BookRow({
             onBlur={() => {
               onRename(name.trim() || "Untitled");
               setEditing(false);
-              toast.success("Renamed");
+              toastSuccess("Renamed");
             }}
             onKeyDown={(e) => {
               if (e.key === "Enter") (e.target as HTMLInputElement).blur();
