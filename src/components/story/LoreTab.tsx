@@ -68,7 +68,31 @@ export function LoreTab({ books }: { books: BooksApi }) {
             </button>
           );
         })}
+        <button
+          onClick={() => setSearchOpen((v) => !v)}
+          aria-label="Search lore"
+          className="ml-auto flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
+        >
+          <Search className="h-4 w-4" />
+        </button>
       </div>
+      {searchOpen && (
+        <div className="animate-slide-down-fade mx-3 mt-2 flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5">
+          <Search className="h-3.5 w-3.5 text-muted-foreground" />
+          <input
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search names and descriptions…"
+            className="min-w-0 flex-1 bg-transparent text-[13px] outline-none"
+          />
+          {query && (
+            <button onClick={() => setQuery("")} className="text-muted-foreground">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      )}
       <div className="no-scrollbar flex-1 space-y-2 overflow-y-auto px-4 py-4 pb-28">
         {filtered.length === 0 && (
           <div className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
