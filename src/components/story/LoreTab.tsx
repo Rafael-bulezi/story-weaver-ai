@@ -13,6 +13,7 @@ import {
   Wand2,
   Loader2,
   Upload,
+  Search,
 } from "lucide-react";
 
 import type { BooksApi, LoreItem, LoreType } from "@/lib/story-store";
