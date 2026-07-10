@@ -26,7 +26,19 @@ import { FloatingAddMenu } from "@/components/story/FloatingAddMenu";
 export function LoreTab({ books }: { books: BooksApi }) {
   const active = books.active!;
   const [tab, setTab] = useState<LoreType>("character");
-  const filtered = active.lore.filter((i) => i.type === tab);
+  const [query, setQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return active.lore.filter(
+      (i) =>
+        i.type === tab &&
+        (!q ||
+          i.name.toLowerCase().includes(q) ||
+          (i.role ?? "").toLowerCase().includes(q) ||
+          i.description.toLowerCase().includes(q)),
+    );
+  }, [active.lore, tab, query]);
   const [viewImage, setViewImage] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [pending, setPending] = useState<LoreType | null>(null);
