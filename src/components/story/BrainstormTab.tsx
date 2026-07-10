@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { toast } from "sonner";
 import {
   ArrowUp,
   Loader2,
@@ -16,12 +15,14 @@ import {
   Feather,
   Plus,
   SlidersHorizontal,
+  AtSign,
 } from "lucide-react";
 
 import type { BooksApi, BrainstormMessage, Core } from "@/lib/story-store";
 import { buildSelectiveContext } from "@/lib/story-store";
 import { invokeAssistant } from "@/lib/ai.functions";
 import { cn } from "@/lib/utils";
+import { toastSuccess, toastError, copyText } from "@/lib/toast";
 import { ContextStrip, type ContextSelection } from "@/components/story/ContextStrip";
 import {
   DropdownMenu,
@@ -80,7 +81,7 @@ export function BrainstormTab({
         const asst = last.find((m) => m.role === "assistant");
         const user = last.find((m) => m.role === "user");
         if (!asst) {
-          toast.error("No assistant reply to rewrite yet.");
+          toastError("No assistant reply to rewrite yet.");
           setBusy(null);
           return;
         }
@@ -93,7 +94,7 @@ export function BrainstormTab({
         content: content.trim(),
       });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "AI request failed");
+      toastError(e instanceof Error ? e.message : "AI request failed");
     } finally {
       setBusy(null);
     }
@@ -108,7 +109,7 @@ export function BrainstormTab({
         active.content.slice(el.selectionStart ?? active.content.length)
       : active.content + addition;
     books.updateBook(active.id, { content: next });
-    toast.success("Appended to chapter");
+    toastSuccess("Appended to chapter");
     onSwitchToChat();
   }
 
@@ -128,9 +129,9 @@ export function BrainstormTab({
           .slice(0, 60) || "New Core";
       const id = books.addCore({ title: coreTitle, emoji: "◇" });
       if (id) books.addCoreBlock(id, { title: "Note", body: text.trim() });
-      toast.success(`Added as new Core: ${coreTitle}`);
+      toastSuccess(`Added as new Core: ${coreTitle}`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't create core");
+      toastError(e instanceof Error ? e.message : "Couldn't create core");
     }
   }
 
@@ -186,7 +187,7 @@ export function BrainstormTab({
               cores={cores}
               onDelete={() => books.removeBrainstorm(m.id)}
               onCopy={() =>
-                navigator.clipboard.writeText(m.content).then(() => toast.success("Copied"))
+                copyText(m.content, "Reply copied")
               }
               onAppend={() => insertAtCursor(m.content)}
               onInsertCore={() => insertAsCore(m.content)}
@@ -208,10 +209,10 @@ export function BrainstormTab({
                 if (coreId === "__new__") {
                   const id = books.addCore({ title: option.slice(0, 40), emoji: "◇" });
                   if (id) books.addCoreBlock(id, { title: "Fix", body: option });
-                  toast.success("Added as new Core");
+                  toastSuccess("Added as new Core");
                 } else {
                   books.addCoreBlock(coreId, { title: subcard || "Fix", body: option });
-                  toast.success("Added to Core");
+                  toastSuccess("Added to Core");
                 }
               }}
             />
@@ -254,8 +255,19 @@ export function BrainstormTab({
               >
                 Include chapter text
               </DropdownMenuCheckboxItem>
-            </DropdownMenuContent>
+          </DropdownMenuContent>
           </DropdownMenu>
+          <button
+            type="button"
+            onClick={() => {
+              setInput((v) => (v.endsWith("@") ? v : v + (v && !v.endsWith(" ") ? " @" : "@")));
+              editorRef.current?.focus();
+            }}
+            aria-label="Mention lore or core"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
+          >
+            <AtSign className="h-3.5 w-3.5" />
+          </button>
           <button
             type="submit"
             disabled={!input.trim() || !!busy}
@@ -388,7 +400,7 @@ function AssistantBubble({
       <button
         onClick={onDelete}
         aria-label="Delete"
-        className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/70 text-muted-foreground opacity-0 transition group-hover:opacity-100 md:opacity-70"
+        className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-background/90 text-muted-foreground shadow-sm ring-1 ring-border/60 hover:bg-background hover:text-foreground"
       >
         <X className="h-3.5 w-3.5" />
       </button>

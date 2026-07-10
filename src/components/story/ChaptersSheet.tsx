@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { toast } from "sonner";
+import { toastSuccess, toastError } from "@/lib/toast";
 import { ArrowUp, ArrowDown, Trash2, Edit3, ScrollText, FileText } from "lucide-react";
 import {
   Sheet,
@@ -41,7 +41,7 @@ export function ChaptersSheet({
     books.loadChapter(id);
     setOpen(false);
     onLoaded?.();
-    toast.success("Loaded into editor");
+    toastSuccess("Loaded into editor");
   };
 
   return (
@@ -62,7 +62,7 @@ export function ChaptersSheet({
                 onLoad={() => loadCh(c.id)}
                 onMove={() => {
                   books.setChapterType(c.id, "draft");
-                  toast.success("Moved to Drafts");
+                  toastSuccess("Moved to Drafts");
                 }}
                 moveLabel="Move to Drafts"
                 MoveIcon={ArrowDown}
@@ -79,7 +79,7 @@ export function ChaptersSheet({
                 onLoad={() => loadCh(c.id)}
                 onMove={() => {
                   books.setChapterType(c.id, "canon");
-                  toast.success("Promoted to Canon");
+                  toastSuccess("Promoted to Canon");
                 }}
                 moveLabel="Promote to Canon"
                 MoveIcon={ArrowUp}
@@ -104,7 +104,7 @@ export function ChaptersSheet({
               onClick={() => {
                 if (confirmDelete) {
                   books.deleteChapter(confirmDelete.id);
-                  toast.success("Draft deleted");
+                  toastSuccess("Draft deleted");
                 }
                 setConfirmDelete(null);
               }}

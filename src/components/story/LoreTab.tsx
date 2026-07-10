@@ -1,6 +1,6 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { toast } from "sonner";
+import { toastSuccess, toastError, toastInfo } from "@/lib/toast";
 import {
   User,
   MapPin,
@@ -13,6 +13,7 @@ import {
   Wand2,
   Loader2,
   Upload,
+  Search,
 } from "lucide-react";
 
 import type { BooksApi, LoreItem, LoreType } from "@/lib/story-store";
@@ -26,7 +27,19 @@ import { FloatingAddMenu } from "@/components/story/FloatingAddMenu";
 export function LoreTab({ books }: { books: BooksApi }) {
   const active = books.active!;
   const [tab, setTab] = useState<LoreType>("character");
-  const filtered = active.lore.filter((i) => i.type === tab);
+  const [query, setQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return active.lore.filter(
+      (i) =>
+        i.type === tab &&
+        (!q ||
+          i.name.toLowerCase().includes(q) ||
+          (i.role ?? "").toLowerCase().includes(q) ||
+          i.description.toLowerCase().includes(q)),
+    );
+  }, [active.lore, tab, query]);
   const [viewImage, setViewImage] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [pending, setPending] = useState<LoreType | null>(null);
@@ -56,7 +69,31 @@ export function LoreTab({ books }: { books: BooksApi }) {
             </button>
           );
         })}
+        <button
+          onClick={() => setSearchOpen((v) => !v)}
+          aria-label="Search lore"
+          className="ml-auto flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
+        >
+          <Search className="h-4 w-4" />
+        </button>
       </div>
+      {searchOpen && (
+        <div className="animate-slide-down-fade mx-3 mt-2 flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5">
+          <Search className="h-3.5 w-3.5 text-muted-foreground" />
+          <input
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search names and descriptions…"
+            className="min-w-0 flex-1 bg-transparent text-[13px] outline-none"
+          />
+          {query && (
+            <button onClick={() => setQuery("")} className="text-muted-foreground">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      )}
       <div className="no-scrollbar flex-1 space-y-2 overflow-y-auto px-4 py-4 pb-28">
         {filtered.length === 0 && (
           <div className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
@@ -69,7 +106,7 @@ export function LoreTab({ books }: { books: BooksApi }) {
             item={item}
             onSave={(patch) => {
               books.updateLore(item.id, patch);
-              toast.success("Updated");
+              toastSuccess("Updated");
             }}
             onDelete={() => books.removeLore(item.id)}
             onViewImage={() => item.imageUrl && setViewImage(item.imageUrl)}
@@ -102,7 +139,7 @@ export function LoreTab({ books }: { books: BooksApi }) {
                     imageUrl: v.imageUrl,
                   });
                   setPending(null);
-                  toast.success("Added to lore");
+                  toastSuccess("Added to lore");
                 }}
               />
             </div>
@@ -132,7 +169,7 @@ export function LoreTab({ books }: { books: BooksApi }) {
             icon: ImagePlus,
             onClick: () => {
               setPending("character");
-              toast.info("Add a character/place/concept then tap Generate.");
+              toastInfo("Add a character/place/concept then tap Generate.");
             },
           },
         ]}
@@ -256,7 +293,7 @@ export function LoreEditor({
     const f = e.target.files?.[0];
     if (!f) return;
     if (f.size > 2_000_000) {
-      toast.error("Image over 2MB — pick smaller.");
+      toastError("Image over 2MB — pick smaller.");
       return;
     }
     const reader = new FileReader();
@@ -265,7 +302,7 @@ export function LoreEditor({
   }
   async function generate() {
     if (!name.trim()) {
-      toast.error("Add a name first");
+      toastError("Add a name first");
       return;
     }
     setGenerating(true);
@@ -273,9 +310,9 @@ export function LoreEditor({
       const prompt = `${type === "character" ? "Portrait of a character" : type === "place" ? "Illustration of a place" : "Symbolic illustration of a concept"} named ${name}. ${role ? `${role}. ` : ""}${description}. Cinematic, painterly, moody lighting.`;
       const { dataUrl } = await genImage({ data: { prompt } });
       setImageUrl(dataUrl);
-      toast.success("Image generated");
+      toastSuccess("Image generated");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Generation failed");
+      toastError(e instanceof Error ? e.message : "Generation failed");
     } finally {
       setGenerating(false);
     }

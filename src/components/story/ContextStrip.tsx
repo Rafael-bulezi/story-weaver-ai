@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { X, Plus, Layers, User, MapPin, Lightbulb, Diamond } from "lucide-react";
+import { X, Plus, Layers, User, MapPin, Lightbulb, Diamond, Search } from "lucide-react";
 import type { Book } from "@/lib/story-store";
 import { cn } from "@/lib/utils";
 import {
@@ -25,6 +25,10 @@ export function ContextStrip({
   onChange: (v: ContextSelection) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase();
+  const matchLore = (name: string) => !q || name.toLowerCase().includes(q);
+  const matchCore = (c: { title: string }) => !q || c.title.toLowerCase().includes(q);
 
   const coreChips = useMemo(
     () => book.cores.filter((c) => value.coreIds.includes(c.id)),
@@ -80,57 +84,54 @@ export function ContextStrip({
           <SheetHeader>
             <SheetTitle>Add to context</SheetTitle>
           </SheetHeader>
+          <div className="mt-3 flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5">
+            <Search className="h-3.5 w-3.5 text-muted-foreground" />
+            <input
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search cores, characters, places, concepts…"
+              className="min-w-0 flex-1 bg-transparent text-[13px] outline-none"
+            />
+            {query && (
+              <button onClick={() => setQuery("")} className="text-muted-foreground">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
           <div className="mt-4 space-y-4">
             <Section title="Cores" icon={Layers}>
-              {book.cores.length === 0 && <Empty />}
-              {book.cores.map((c, i) => (
-                <Row
-                  key={c.id}
-                  label={`Core ${i + 1} — ${c.title}`}
-                  selected={value.coreIds.includes(c.id)}
-                  onClick={() => toggleCore(c.id)}
-                />
-              ))}
-            </Section>
-            <Section title="Characters" icon={User}>
-              {book.lore.filter((l) => l.type === "character").length === 0 && <Empty />}
-              {book.lore
-                .filter((l) => l.type === "character")
-                .map((l) => (
+              {book.cores.filter(matchCore).length === 0 && <Empty />}
+              {book.cores.filter(matchCore).map((c) => {
+                const i = book.cores.indexOf(c);
+                return (
                   <Row
-                    key={l.id}
-                    label={l.name}
-                    selected={value.loreIds.includes(l.id)}
-                    onClick={() => toggleLore(l.id)}
+                    key={c.id}
+                    label={`Core ${i + 1} — ${c.title}`}
+                    selected={value.coreIds.includes(c.id)}
+                    onClick={() => toggleCore(c.id)}
                   />
-                ))}
+                );
+              })}
             </Section>
-            <Section title="Places" icon={MapPin}>
-              {book.lore.filter((l) => l.type === "place").length === 0 && <Empty />}
-              {book.lore
-                .filter((l) => l.type === "place")
-                .map((l) => (
-                  <Row
-                    key={l.id}
-                    label={l.name}
-                    selected={value.loreIds.includes(l.id)}
-                    onClick={() => toggleLore(l.id)}
-                  />
-                ))}
-            </Section>
-            <Section title="Concepts" icon={Lightbulb}>
-              {book.lore.filter((l) => l.type === "concept").length === 0 && <Empty />}
-              {book.lore
-                .filter((l) => l.type === "concept")
-                .map((l) => (
-                  <Row
-                    key={l.id}
-                    label={l.name}
-                    selected={value.loreIds.includes(l.id)}
-                    onClick={() => toggleLore(l.id)}
-                  />
-                ))}
-            </Section>
+            {(["character", "place", "concept"] as const).map((type) => {
+              const label = type === "character" ? "Characters" : type === "place" ? "Places" : "Concepts";
+              const Icon = type === "character" ? User : type === "place" ? MapPin : Lightbulb;
+              const items = book.lore.filter((l) => l.type === type && matchLore(l.name));
+              return (
+                <Section key={type} title={label} icon={Icon}>
+                  {items.length === 0 && <Empty />}
+                  {items.map((l) => (
+                    <Row
+                      key={l.id}
+                      label={l.name}
+                      selected={value.loreIds.includes(l.id)}
+                      onClick={() => toggleLore(l.id)}
+                    />
+                  ))}
+                </Section>
+              );
+            })}
           </div>
         </SheetContent>
       </Sheet>
