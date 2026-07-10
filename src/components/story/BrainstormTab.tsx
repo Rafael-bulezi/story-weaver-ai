@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { toast } from "sonner";
 import {
   ArrowUp,
   Loader2,
@@ -16,12 +15,14 @@ import {
   Feather,
   Plus,
   SlidersHorizontal,
+  AtSign,
 } from "lucide-react";
 
 import type { BooksApi, BrainstormMessage, Core } from "@/lib/story-store";
 import { buildSelectiveContext } from "@/lib/story-store";
 import { invokeAssistant } from "@/lib/ai.functions";
 import { cn } from "@/lib/utils";
+import { toastSuccess, toastError, copyText } from "@/lib/toast";
 import { ContextStrip, type ContextSelection } from "@/components/story/ContextStrip";
 import {
   DropdownMenu,
