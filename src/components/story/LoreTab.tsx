@@ -69,7 +69,7 @@ export function LoreTab({ books }: { books: BooksApi }) {
             item={item}
             onSave={(patch) => {
               books.updateLore(item.id, patch);
-              toast.success("Updated");
+              toastSuccess("Updated");
             }}
             onDelete={() => books.removeLore(item.id)}
             onViewImage={() => item.imageUrl && setViewImage(item.imageUrl)}
@@ -102,7 +102,7 @@ export function LoreTab({ books }: { books: BooksApi }) {
                     imageUrl: v.imageUrl,
                   });
                   setPending(null);
-                  toast.success("Added to lore");
+                  toastSuccess("Added to lore");
                 }}
               />
             </div>
@@ -132,7 +132,7 @@ export function LoreTab({ books }: { books: BooksApi }) {
             icon: ImagePlus,
             onClick: () => {
               setPending("character");
-              toast.info("Add a character/place/concept then tap Generate.");
+              toastInfo("Add a character/place/concept then tap Generate.");
             },
           },
         ]}
@@ -256,7 +256,7 @@ export function LoreEditor({
     const f = e.target.files?.[0];
     if (!f) return;
     if (f.size > 2_000_000) {
-      toast.error("Image over 2MB — pick smaller.");
+      toastError("Image over 2MB — pick smaller.");
       return;
     }
     const reader = new FileReader();
@@ -265,7 +265,7 @@ export function LoreEditor({
   }
   async function generate() {
     if (!name.trim()) {
-      toast.error("Add a name first");
+      toastError("Add a name first");
       return;
     }
     setGenerating(true);
@@ -273,9 +273,9 @@ export function LoreEditor({
       const prompt = `${type === "character" ? "Portrait of a character" : type === "place" ? "Illustration of a place" : "Symbolic illustration of a concept"} named ${name}. ${role ? `${role}. ` : ""}${description}. Cinematic, painterly, moody lighting.`;
       const { dataUrl } = await genImage({ data: { prompt } });
       setImageUrl(dataUrl);
-      toast.success("Image generated");
+      toastSuccess("Image generated");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Generation failed");
+      toastError(e instanceof Error ? e.message : "Generation failed");
     } finally {
       setGenerating(false);
     }
