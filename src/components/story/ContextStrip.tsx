@@ -25,6 +25,10 @@ export function ContextStrip({
   onChange: (v: ContextSelection) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase();
+  const matchLore = (name: string) => !q || name.toLowerCase().includes(q);
+  const matchCore = (c: { title: string }) => !q || c.title.toLowerCase().includes(q);
 
   const coreChips = useMemo(
     () => book.cores.filter((c) => value.coreIds.includes(c.id)),
