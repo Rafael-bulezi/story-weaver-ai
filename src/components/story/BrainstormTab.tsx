@@ -400,7 +400,7 @@ function AssistantBubble({
       <button
         onClick={onDelete}
         aria-label="Delete"
-        className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/70 text-muted-foreground opacity-0 transition group-hover:opacity-100 md:opacity-70"
+        className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-background/90 text-muted-foreground shadow-sm ring-1 ring-border/60 hover:bg-background hover:text-foreground"
       >
         <X className="h-3.5 w-3.5" />
       </button>
