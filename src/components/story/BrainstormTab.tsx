@@ -129,7 +129,7 @@ export function BrainstormTab({
           .slice(0, 60) || "New Core";
       const id = books.addCore({ title: coreTitle, emoji: "◇" });
       if (id) books.addCoreBlock(id, { title: "Note", body: text.trim() });
-      toast.success(`Added as new Core: ${coreTitle}`);
+      toastSuccess(`Added as new Core: ${coreTitle}`);
     } catch (e) {
       toastError(e instanceof Error ? e.message : "Couldn't create core");
     }
@@ -187,7 +187,7 @@ export function BrainstormTab({
               cores={cores}
               onDelete={() => books.removeBrainstorm(m.id)}
               onCopy={() =>
-                navigator.clipboard.writeText(m.content).then(() => toastSuccess("Copied"))
+                copyText(m.content, "Reply copied")
               }
               onAppend={() => insertAtCursor(m.content)}
               onInsertCore={() => insertAsCore(m.content)}
