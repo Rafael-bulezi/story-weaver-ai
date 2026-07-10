@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { X, Plus, Layers, User, MapPin, Lightbulb, Diamond } from "lucide-react";
+import { X, Plus, Layers, User, MapPin, Lightbulb, Diamond, Search } from "lucide-react";
 import type { Book } from "@/lib/story-store";
 import { cn } from "@/lib/utils";
 import {
