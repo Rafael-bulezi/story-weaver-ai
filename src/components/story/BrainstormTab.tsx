@@ -255,8 +255,19 @@ export function BrainstormTab({
               >
                 Include chapter text
               </DropdownMenuCheckboxItem>
-            </DropdownMenuContent>
+          </DropdownMenuContent>
           </DropdownMenu>
+          <button
+            type="button"
+            onClick={() => {
+              setInput((v) => (v.endsWith("@") ? v : v + (v && !v.endsWith(" ") ? " @" : "@")));
+              editorRef.current?.focus();
+            }}
+            aria-label="Mention lore or core"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
+          >
+            <AtSign className="h-3.5 w-3.5" />
+          </button>
           <button
             type="submit"
             disabled={!input.trim() || !!busy}
