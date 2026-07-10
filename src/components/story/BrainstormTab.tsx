@@ -81,7 +81,7 @@ export function BrainstormTab({
         const asst = last.find((m) => m.role === "assistant");
         const user = last.find((m) => m.role === "user");
         if (!asst) {
-          toast.error("No assistant reply to rewrite yet.");
+          toastError("No assistant reply to rewrite yet.");
           setBusy(null);
           return;
         }
@@ -94,7 +94,7 @@ export function BrainstormTab({
         content: content.trim(),
       });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "AI request failed");
+      toastError(e instanceof Error ? e.message : "AI request failed");
     } finally {
       setBusy(null);
     }
@@ -109,7 +109,7 @@ export function BrainstormTab({
         active.content.slice(el.selectionStart ?? active.content.length)
       : active.content + addition;
     books.updateBook(active.id, { content: next });
-    toast.success("Appended to chapter");
+    toastSuccess("Appended to chapter");
     onSwitchToChat();
   }
 
@@ -131,7 +131,7 @@ export function BrainstormTab({
       if (id) books.addCoreBlock(id, { title: "Note", body: text.trim() });
       toast.success(`Added as new Core: ${coreTitle}`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't create core");
+      toastError(e instanceof Error ? e.message : "Couldn't create core");
     }
   }
 
@@ -187,7 +187,7 @@ export function BrainstormTab({
               cores={cores}
               onDelete={() => books.removeBrainstorm(m.id)}
               onCopy={() =>
-                navigator.clipboard.writeText(m.content).then(() => toast.success("Copied"))
+                navigator.clipboard.writeText(m.content).then(() => toastSuccess("Copied"))
               }
               onAppend={() => insertAtCursor(m.content)}
               onInsertCore={() => insertAsCore(m.content)}
@@ -209,10 +209,10 @@ export function BrainstormTab({
                 if (coreId === "__new__") {
                   const id = books.addCore({ title: option.slice(0, 40), emoji: "◇" });
                   if (id) books.addCoreBlock(id, { title: "Fix", body: option });
-                  toast.success("Added as new Core");
+                  toastSuccess("Added as new Core");
                 } else {
                   books.addCoreBlock(coreId, { title: subcard || "Fix", body: option });
-                  toast.success("Added to Core");
+                  toastSuccess("Added to Core");
                 }
               }}
             />
