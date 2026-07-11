@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { ArrowRight, BookOpen, Layers, ScrollText, FileText, Feather } from "lucide-react";
+import { ArrowRight, BookOpen, Layers, ScrollText, FileText, Feather, Sparkles } from "lucide-react";
 import type { BooksApi } from "@/lib/story-store";
 
 export function StudioTab({
@@ -23,28 +23,23 @@ export function StudioTab({
 
   return (
     <div className="mx-auto h-full w-full max-w-2xl overflow-y-auto px-5 py-5 no-scrollbar">
-      <div className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-        Studio
-      </div>
-      <h2 className="mt-0.5 font-serif text-3xl font-semibold">{active.name}</h2>
-      <p className="mt-1 text-[12.5px] text-muted-foreground">Your creative studio for this book.</p>
-
-      {/* Continue writing card */}
-      <button
-        onClick={onOpenChat}
-        className="animate-slide-up-fade mt-5 flex w-full items-center justify-between rounded-2xl bg-primary p-4 text-left text-primary-foreground shadow-sm active:scale-[0.99]"
-      >
-        <div>
-          <div className="text-[11px] uppercase tracking-widest opacity-70">Continue writing</div>
-          <div className="mt-0.5 font-serif text-lg font-semibold">
-            {active.title || "Untitled chapter"}
-          </div>
-          <div className="mt-0.5 text-[11px] opacity-80">{wc} words · last updated just now</div>
+      {/* Hero card — the "Creative Studio" block */}
+      <div className="animate-slide-up-fade relative overflow-hidden rounded-3xl border border-border/70 bg-gradient-to-br from-[color:var(--writer-bg)] via-card to-card p-5 shadow-sm">
+        <div className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-[color:var(--writer)] opacity-[0.06] blur-2xl" />
+        <div className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[color:var(--writer)]">
+          <Sparkles className="h-3 w-3" /> Creative Studio
         </div>
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-foreground/15">
-          <ArrowRight className="h-4 w-4" />
-        </span>
-      </button>
+        <h2 className="mt-1 font-serif text-3xl font-semibold leading-tight">{active.name}</h2>
+        <p className="mt-1 text-[12.5px] text-muted-foreground">
+          {active.title || "Untitled chapter"} · {wc} words
+        </p>
+        <button
+          onClick={onOpenChat}
+          className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-[12.5px] font-semibold text-primary-foreground shadow-sm active:scale-[0.98]"
+        >
+          Continue writing <ArrowRight className="h-3.5 w-3.5" />
+        </button>
+      </div>
 
       {/* Stat tiles */}
       <div className="mt-5 grid grid-cols-2 gap-2.5">
