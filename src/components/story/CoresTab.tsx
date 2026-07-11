@@ -392,7 +392,7 @@ function CoreCard({
       )}
 
       <div className="space-y-1.5">
-        {core.blocks.map((bl, bi) => (
+        {visibleBlocks.map((bl, bi) => (
           <div
             key={bl.id}
             className="rounded-xl border border-l-2 border-border/60 border-l-[color:var(--writer)] bg-background p-2.5"
@@ -424,6 +424,22 @@ function CoreCard({
             />
           </div>
         ))}
+        {hiddenCount > 0 && !showAll && (
+          <button
+            onClick={() => setShowAll(true)}
+            className="w-full rounded-xl border border-dashed border-border py-1.5 text-[11.5px] font-medium text-muted-foreground hover:bg-muted/40"
+          >
+            Show {hiddenCount} more
+          </button>
+        )}
+        {showAll && core.blocks.length > VISIBLE_CAP && (
+          <button
+            onClick={() => setShowAll(false)}
+            className="w-full rounded-xl border border-dashed border-border py-1.5 text-[11.5px] font-medium text-muted-foreground hover:bg-muted/40"
+          >
+            Show less
+          </button>
+        )}
         {adding ? (
           <div className="space-y-2 rounded-xl border border-border bg-background p-2.5">
             <Input placeholder="Fact name" value={title} onChange={(e) => setTitle(e.target.value)} />
