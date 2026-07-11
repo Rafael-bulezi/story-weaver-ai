@@ -127,13 +127,23 @@ export function CoresTab({ books }: { books: BooksApi }) {
                 Canonical facts the AI leans on when writing.
               </p>
             </div>
-            <button
-              onClick={() => setSearchOpen((v) => !v)}
-              aria-label="Search cores"
-              className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
-            >
-              <Search className="h-4 w-4" />
-            </button>
+            <div className="flex items-center gap-0.5">
+              <button
+                onClick={() => setNamesOnly((v) => !v)}
+                aria-label={namesOnly ? "Show full cores" : "Show names only"}
+                title={namesOnly ? "Show full cores" : "Show names only"}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
+              >
+                {namesOnly ? <Rows3 className="h-4 w-4" /> : <List className="h-4 w-4" />}
+              </button>
+              <button
+                onClick={() => setSearchOpen((v) => !v)}
+                aria-label="Search cores"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
+              >
+                <Search className="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
           {searchOpen && (
@@ -187,9 +197,29 @@ export function CoresTab({ books }: { books: BooksApi }) {
               No cores match “{query}”.
             </div>
           )}
-          <div className="space-y-3">
+          <div className={namesOnly ? "space-y-1.5" : "space-y-3"}>
             {filteredCores.map((core) => {
               const realIndex = active.cores.indexOf(core);
+              if (namesOnly) {
+                return (
+                  <button
+                    key={core.id}
+                    onClick={() => setLightboxId(core.id)}
+                    className="flex w-full items-center gap-2 rounded-xl border border-border/70 bg-card px-3 py-2 text-left hover:border-primary/40"
+                  >
+                    <span className="flex h-5 items-center gap-1 rounded-full bg-[color:var(--writer-bg)] px-1.5 text-[10px] font-semibold text-[color:var(--writer)]">
+                      <span className="font-serif">{core.emoji ?? "◇"}</span>
+                      {realIndex + 1}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">
+                      {core.title}
+                    </span>
+                    <span className="text-[10.5px] text-muted-foreground">
+                      {core.blocks.length}
+                    </span>
+                  </button>
+                );
+              }
               return (
                 <CoreCard
                   key={core.id}
@@ -198,12 +228,26 @@ export function CoresTab({ books }: { books: BooksApi }) {
                   books={books}
                   onAttach={() => pickFileFor(core.id)}
                   onSendToLore={() => sendCoreToLore(core)}
+                  onExpand={() => setLightboxId(core.id)}
                 />
               );
             })}
           </div>
         </div>
       </div>
+
+      {lightboxId && (() => {
+        const c = active.cores.find((x) => x.id === lightboxId);
+        if (!c) return null;
+        return (
+          <CoreLightbox
+            core={c}
+            index={active.cores.indexOf(c)}
+            books={books}
+            onClose={() => setLightboxId(null)}
+          />
+        );
+      })()}
 
       {/* Ask composer with inline + and @ */}
       <form
