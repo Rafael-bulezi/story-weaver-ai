@@ -536,8 +536,9 @@ export function buildBookContext(
   return parts.join("\n\n---\n\n");
 }
 
-/** One-paragraph digest of every core — used as the always-on "Overview" context chip. */
+/** One-paragraph digest — user-authored overview when present, else auto-built from cores. */
 export function buildOverview(book: Book): string {
+  if (book.overview && book.overview.trim()) return book.overview.trim();
   if (!book.cores.length) return `${book.name}: no cores yet.`;
   const bits = book.cores.map((c, i) => {
     const first = c.blocks[0];
