@@ -12,7 +12,11 @@ import {
   Download,
   Search,
   BookOpen,
+  Maximize2,
+  Rows3,
+  List,
 } from "lucide-react";
+import { CoreLightbox } from "@/components/story/CoreLightbox";
 
 import type { BooksApi, Core } from "@/lib/story-store";
 import { coresToPrompt } from "@/lib/story-store";
@@ -30,6 +34,8 @@ export function CoresTab({ books }: { books: BooksApi }) {
   const [answer, setAnswer] = useState<{ text: string; sources: string } | null>(null);
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [namesOnly, setNamesOnly] = useState(false);
+  const [lightboxId, setLightboxId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [attachTarget, setAttachTarget] = useState<string | null>(null);
 
@@ -121,13 +127,23 @@ export function CoresTab({ books }: { books: BooksApi }) {
                 Canonical facts the AI leans on when writing.
               </p>
             </div>
-            <button
-              onClick={() => setSearchOpen((v) => !v)}
-              aria-label="Search cores"
-              className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
-            >
-              <Search className="h-4 w-4" />
-            </button>
+            <div className="flex items-center gap-0.5">
+              <button
+                onClick={() => setNamesOnly((v) => !v)}
+                aria-label={namesOnly ? "Show full cores" : "Show names only"}
+                title={namesOnly ? "Show full cores" : "Show names only"}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
+              >
+                {namesOnly ? <Rows3 className="h-4 w-4" /> : <List className="h-4 w-4" />}
+              </button>
+              <button
+                onClick={() => setSearchOpen((v) => !v)}
+                aria-label="Search cores"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
+              >
+                <Search className="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
           {searchOpen && (
@@ -181,9 +197,29 @@ export function CoresTab({ books }: { books: BooksApi }) {
               No cores match “{query}”.
             </div>
           )}
-          <div className="space-y-3">
+          <div className={namesOnly ? "space-y-1.5" : "space-y-3"}>
             {filteredCores.map((core) => {
               const realIndex = active.cores.indexOf(core);
+              if (namesOnly) {
+                return (
+                  <button
+                    key={core.id}
+                    onClick={() => setLightboxId(core.id)}
+                    className="flex w-full items-center gap-2 rounded-xl border border-border/70 bg-card px-3 py-2 text-left hover:border-primary/40"
+                  >
+                    <span className="flex h-5 items-center gap-1 rounded-full bg-[color:var(--writer-bg)] px-1.5 text-[10px] font-semibold text-[color:var(--writer)]">
+                      <span className="font-serif">{core.emoji ?? "◇"}</span>
+                      {realIndex + 1}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">
+                      {core.title}
+                    </span>
+                    <span className="text-[10.5px] text-muted-foreground">
+                      {core.blocks.length}
+                    </span>
+                  </button>
+                );
+              }
               return (
                 <CoreCard
                   key={core.id}
@@ -192,12 +228,26 @@ export function CoresTab({ books }: { books: BooksApi }) {
                   books={books}
                   onAttach={() => pickFileFor(core.id)}
                   onSendToLore={() => sendCoreToLore(core)}
+                  onExpand={() => setLightboxId(core.id)}
                 />
               );
             })}
           </div>
         </div>
       </div>
+
+      {lightboxId && (() => {
+        const c = active.cores.find((x) => x.id === lightboxId);
+        if (!c) return null;
+        return (
+          <CoreLightbox
+            core={c}
+            index={active.cores.indexOf(c)}
+            books={books}
+            onClose={() => setLightboxId(null)}
+          />
+        );
+      })()}
 
       {/* Ask composer with inline + and @ */}
       <form
@@ -250,16 +300,22 @@ function CoreCard({
   books,
   onAttach,
   onSendToLore,
+  onExpand,
 }: {
   core: Core;
   index: number;
   books: BooksApi;
   onAttach: () => void;
   onSendToLore: () => void;
+  onExpand: () => void;
 }) {
   const [adding, setAdding] = useState(false);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [showAll, setShowAll] = useState(false);
+  const VISIBLE_CAP = 4;
+  const visibleBlocks = showAll ? core.blocks : core.blocks.slice(0, VISIBLE_CAP);
+  const hiddenCount = Math.max(0, core.blocks.length - visibleBlocks.length);
   return (
     <div className="animate-slide-up-fade rounded-2xl border border-border/70 bg-card p-3 transition-shadow hover:shadow-md">
       <div className="mb-2 flex items-center justify-between gap-2">
@@ -288,6 +344,14 @@ function CoreCard({
             aria-label="Attach file"
           >
             <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
+          </button>
+          <button
+            onClick={onExpand}
+            className="rounded-full p-1.5 hover:bg-muted"
+            aria-label="Expand core"
+            title="Expand"
+          >
+            <Maximize2 className="h-3.5 w-3.5 text-muted-foreground" />
           </button>
           <button
             onClick={() => books.removeCore(core.id)}
@@ -328,7 +392,7 @@ function CoreCard({
       )}
 
       <div className="space-y-1.5">
-        {core.blocks.map((bl, bi) => (
+        {visibleBlocks.map((bl, bi) => (
           <div
             key={bl.id}
             className="rounded-xl border border-l-2 border-border/60 border-l-[color:var(--writer)] bg-background p-2.5"
@@ -360,6 +424,22 @@ function CoreCard({
             />
           </div>
         ))}
+        {hiddenCount > 0 && !showAll && (
+          <button
+            onClick={() => setShowAll(true)}
+            className="w-full rounded-xl border border-dashed border-border py-1.5 text-[11.5px] font-medium text-muted-foreground hover:bg-muted/40"
+          >
+            Show {hiddenCount} more
+          </button>
+        )}
+        {showAll && core.blocks.length > VISIBLE_CAP && (
+          <button
+            onClick={() => setShowAll(false)}
+            className="w-full rounded-xl border border-dashed border-border py-1.5 text-[11.5px] font-medium text-muted-foreground hover:bg-muted/40"
+          >
+            Show less
+          </button>
+        )}
         {adding ? (
           <div className="space-y-2 rounded-xl border border-border bg-background p-2.5">
             <Input placeholder="Fact name" value={title} onChange={(e) => setTitle(e.target.value)} />

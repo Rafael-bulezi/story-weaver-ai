@@ -37,10 +37,12 @@ export function BrainstormTab({
   books,
   editorRef,
   onSwitchToChat,
+  onOpenTab,
 }: {
   books: BooksApi;
   editorRef: React.MutableRefObject<HTMLTextAreaElement | null>;
   onSwitchToChat: () => void;
+  onOpenTab?: (tab: "lore" | "cores") => void;
 }) {
   const active = books.active!;
   const invoke = useServerFn(invokeAssistant);
@@ -167,7 +169,7 @@ export function BrainstormTab({
         />
       </div>
 
-      <ContextStrip book={active} value={ctx} onChange={setCtx} />
+      <ContextStrip book={active} books={books} value={ctx} onChange={setCtx} onOpenTab={onOpenTab} />
 
       {/* Chat scroll area */}
       <div ref={scrollRef} className="no-scrollbar flex-1 space-y-2.5 overflow-y-auto px-4 py-3">

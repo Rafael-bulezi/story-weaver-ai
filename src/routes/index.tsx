@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
-import { Menu, Plus, Library } from "lucide-react";
+import { Menu, Plus, Library, BookMarked } from "lucide-react";
 
 import { Sheet, SheetTrigger } from "@/components/ui/sheet";
 import { useBooks } from "@/lib/story-store";
@@ -11,6 +11,7 @@ import { LoreTab } from "@/components/story/LoreTab";
 import { CoresTab } from "@/components/story/CoresTab";
 import { StudioTab } from "@/components/story/StudioTab";
 import { SideMenu } from "@/components/story/SideMenu";
+import { ChaptersSheet } from "@/components/story/ChaptersSheet";
 
 export const Route = createFileRoute("/")({
   component: StoryCanvasApp,
@@ -129,6 +130,19 @@ function StoryCanvasApp() {
             <span className="truncate text-sm font-semibold">{active.name}</span>
           </div>
         </div>
+        <ChaptersSheet
+          books={books}
+          onLoaded={() => setTab("chat")}
+          trigger={
+            <button
+              aria-label="Chapters"
+              title="Chapters"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border/70 bg-card hover:bg-muted"
+            >
+              <BookMarked className="h-4 w-4" />
+            </button>
+          }
+        />
       </header>
 
       {/* Body */}
@@ -139,6 +153,7 @@ function StoryCanvasApp() {
             books={books}
             editorRef={editorRef}
             onSwitchToChat={() => setTab("chat")}
+            onOpenTab={(t) => setTab(t)}
           />
         )}
         {tab === "lore" && <LoreTab books={books} />}
