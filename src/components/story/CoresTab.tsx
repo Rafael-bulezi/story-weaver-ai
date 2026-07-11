@@ -300,16 +300,22 @@ function CoreCard({
   books,
   onAttach,
   onSendToLore,
+  onExpand,
 }: {
   core: Core;
   index: number;
   books: BooksApi;
   onAttach: () => void;
   onSendToLore: () => void;
+  onExpand: () => void;
 }) {
   const [adding, setAdding] = useState(false);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [showAll, setShowAll] = useState(false);
+  const VISIBLE_CAP = 4;
+  const visibleBlocks = showAll ? core.blocks : core.blocks.slice(0, VISIBLE_CAP);
+  const hiddenCount = Math.max(0, core.blocks.length - visibleBlocks.length);
   return (
     <div className="animate-slide-up-fade rounded-2xl border border-border/70 bg-card p-3 transition-shadow hover:shadow-md">
       <div className="mb-2 flex items-center justify-between gap-2">
