@@ -12,7 +12,11 @@ import {
   Download,
   Search,
   BookOpen,
+  Maximize2,
+  Rows3,
+  List,
 } from "lucide-react";
+import { CoreLightbox } from "@/components/story/CoreLightbox";
 
 import type { BooksApi, Core } from "@/lib/story-store";
 import { coresToPrompt } from "@/lib/story-store";
@@ -30,6 +34,8 @@ export function CoresTab({ books }: { books: BooksApi }) {
   const [answer, setAnswer] = useState<{ text: string; sources: string } | null>(null);
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [namesOnly, setNamesOnly] = useState(false);
+  const [lightboxId, setLightboxId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [attachTarget, setAttachTarget] = useState<string | null>(null);
 
