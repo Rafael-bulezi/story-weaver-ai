@@ -61,6 +61,8 @@ export interface Book {
   subtitle?: string;
   cover?: string;
   content: string;
+  /** User-editable one-paragraph overview (falls back to buildOverview when empty). */
+  overview?: string;
   updatedAt: number;
   lore: LoreItem[];
   chapters: Chapter[];
