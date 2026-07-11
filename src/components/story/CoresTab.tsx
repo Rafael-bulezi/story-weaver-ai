@@ -346,6 +346,14 @@ function CoreCard({
             <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
           </button>
           <button
+            onClick={onExpand}
+            className="rounded-full p-1.5 hover:bg-muted"
+            aria-label="Expand core"
+            title="Expand"
+          >
+            <Maximize2 className="h-3.5 w-3.5 text-muted-foreground" />
+          </button>
+          <button
             onClick={() => books.removeCore(core.id)}
             className="rounded-full p-1.5 hover:bg-muted"
             aria-label="Delete core"
