@@ -175,13 +175,13 @@ function SidebarNav({
       {isOpen && (
         <div className="px-3 pb-2">
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/60" />
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search stories..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-9 w-full rounded-lg border border-border/60 bg-background pl-8 pr-3 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/30"
+              className="h-9 w-full rounded-lg border border-border bg-background pl-8 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 text-foreground"
             />
           </div>
         </div>
@@ -204,8 +204,8 @@ function SidebarNav({
               className={cn(
                 "flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm transition-colors",
                 activeSection === item.id
-                  ? "bg-primary/10 text-primary font-medium"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  ? "bg-primary/15 text-primary font-medium"
+                  : "text-foreground hover:bg-muted hover:text-foreground",
                 !isOpen && "h-8 w-8 justify-center p-0 mx-auto"
               )}
             >
@@ -213,7 +213,7 @@ function SidebarNav({
               {isOpen && (
                 <>
                   <span className="flex-1 text-left">{item.label}</span>
-                  <span className="text-xs text-muted-foreground/60">{item.count}</span>
+                  <span className="text-xs text-muted-foreground font-medium">{item.count}</span>
                 </>
               )}
             </button>
@@ -226,7 +226,7 @@ function SidebarNav({
         {/* Book List */}
         {isOpen && (
           <div className="space-y-0.5">
-            <div className="px-2.5 py-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/60">
+            <div className="px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               {activeSection === "library" && "All Stories"}
               {activeSection === "recent" && "Recently Opened"}
               {activeSection === "favorites" && "Favorites"}
@@ -240,8 +240,8 @@ function SidebarNav({
                 className={cn(
                   "group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors",
                   activeBookId === b.id
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    ? "bg-primary/15 text-primary"
+                    : "text-foreground hover:bg-muted"
                 )}
               >
                 <div
@@ -249,26 +249,26 @@ function SidebarNav({
                     "flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs font-serif",
                     activeBookId === b.id
                       ? "bg-primary/20 text-primary"
-                      : "bg-muted text-muted-foreground"
+                      : "bg-muted text-foreground font-semibold"
                   )}
                 >
                   {b.cover ?? "◇"}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className={cn(
-                    "truncate text-sm",
-                    activeBookId === b.id && "font-medium"
+                    "truncate text-sm font-medium",
+                    activeBookId === b.id ? "text-primary font-semibold" : "text-foreground"
                   )}>
                     {b.name}
                   </div>
                   {b.title && (
-                    <div className="truncate text-[11px] text-muted-foreground/60">
+                    <div className="truncate text-[11px] text-muted-foreground">
                       {b.title}
                     </div>
                   )}
                 </div>
                 {hoveredItem === b.id && (
-                  <MoreHorizontal className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />
+                  <MoreHorizontal className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 )}
               </button>
             ))}
@@ -285,7 +285,7 @@ function SidebarNav({
           onClick={() => setActiveSection("trash")}
           title={!isOpen ? "Trash" : undefined}
           className={cn(
-            "flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+            "flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm text-foreground transition-colors hover:bg-muted",
             !isOpen && "h-8 w-8 justify-center p-0 mx-auto"
           )}
         >
@@ -295,13 +295,13 @@ function SidebarNav({
         <button
           title={!isOpen ? "Shortcuts" : undefined}
           className={cn(
-            "flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+            "flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm text-foreground transition-colors hover:bg-muted",
             !isOpen && "h-8 w-8 justify-center p-0 mx-auto"
           )}
         >
           <Keyboard className="h-4 w-4" />
           {isOpen && <span className="flex-1">Shortcuts</span>}
-          {isOpen && <span className="text-[10px] text-muted-foreground/40">⌘K</span>}
+          {isOpen && <span className="text-[10px] text-muted-foreground font-mono">⌘K</span>}
         </button>
       </div>
     </aside>
@@ -545,16 +545,16 @@ function QuickActionsBar({
   return (
     <div className="flex items-center justify-between gap-4 px-5 py-3 border-b border-border/40">
       <div className="relative flex-1 max-w-xs">
-        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/50" />
+        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         <input
           type="text"
           placeholder="Search your stories..."
           onChange={(e) => onSearch(e.target.value)}
-          className="h-8 w-full rounded-lg border border-border/40 bg-background pl-8 pr-3 text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/20"
+          className="h-8 w-full rounded-lg border border-border/60 bg-background pl-8 pr-3 text-sm placeholder:text-muted-foreground text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
         />
       </div>
       <div className="flex items-center gap-2">
-        <div className="flex items-center rounded-lg border border-border/40 bg-card p-0.5">
+        <div className="flex items-center rounded-lg border border-border/60 bg-card p-0.5">
           <button
             onClick={() => onViewModeChange("grid")}
             className={cn(
@@ -577,7 +577,7 @@ function QuickActionsBar({
         <select
           value={sortBy}
           onChange={(e) => onSortChange(e.target.value as SortBy)}
-          className="h-8 rounded-lg border border-border/40 bg-card px-2 text-xs focus:outline-none"
+          className="h-8 rounded-lg border border-border/60 bg-card px-2 text-xs text-foreground focus:outline-none"
         >
           <option value="recent">Recent</option>
           <option value="name">Name</option>
@@ -615,7 +615,7 @@ function BookCard({
           ? "border-primary/40 bg-primary/5 ring-1 ring-primary/20"
           : justCreated
           ? "border-primary/40 ring-4 ring-primary/10 bg-primary/5"
-          : "border-border/60 bg-card hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
+          : "border-border/70 bg-card hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
       )}
     >
       <div className="flex items-start gap-3">
@@ -623,14 +623,14 @@ function BookCard({
           "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl font-serif text-2xl transition-colors",
           isActive
             ? "bg-primary/20 text-primary"
-            : "bg-[color:var(--writer-bg)] text-[color:var(--writer)]"
+            : "bg-[color:var(--writer-bg)] text-[color:var(--writer)] font-semibold"
         )}>
           {book.cover ?? "◇"}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <div className={cn(
-              "truncate font-serif text-lg font-semibold",
+              "truncate font-serif text-lg font-semibold text-foreground",
               isActive && "text-primary"
             )}>
               {book.name}
@@ -641,21 +641,21 @@ function BookCard({
               </span>
             )}
             {isHovered && !justCreated && (
-              <Edit3 className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Edit3 className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
             )}
           </div>
           {book.title && (
-            <div className="truncate text-xs text-muted-foreground mt-0.5">{book.title}</div>
+            <div className="truncate text-xs text-muted-foreground font-medium mt-0.5">{book.title}</div>
           )}
         </div>
       </div>
 
-      <p className="mt-3 line-clamp-2 text-[13px] leading-relaxed text-muted-foreground/80">
+      <p className="mt-3 line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">
         {book.content.trim().slice(0, 160) || "Empty draft — tap to begin weaving your story."}
       </p>
 
       <div className="mt-4 flex items-center justify-between">
-        <div className="flex items-center gap-3 text-[11px] text-muted-foreground/60">
+        <div className="flex items-center gap-3 text-[11px] font-medium text-muted-foreground">
           <span className="flex items-center gap-1">
             <Globe className="h-3 w-3" /> {book.lore.length} lore
           </span>
@@ -708,25 +708,25 @@ function BookRow({
           ? "border-primary/40 bg-primary/5"
           : justCreated
           ? "border-primary/40 ring-4 ring-primary/10 bg-primary/5"
-          : "border-border/40 bg-card hover:border-primary/20"
+          : "border-border/60 bg-card hover:border-primary/30"
       )}
     >
       <div className={cn(
         "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg font-serif text-xl",
-        isActive ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+        isActive ? "bg-primary/20 text-primary" : "bg-muted text-foreground font-semibold"
       )}>
         {book.cover ?? "◇"}
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <div className={cn("truncate font-medium", isActive && "text-primary")}>{book.name}</div>
+          <div className={cn("truncate font-medium text-foreground", isActive && "text-primary font-semibold")}>{book.name}</div>
           {justCreated && (
             <span className="rounded-full bg-primary px-2 py-0.5 text-[9px] font-medium text-primary-foreground animate-pulse shrink-0">
               new
             </span>
           )}
         </div>
-        <div className="flex items-center gap-3 text-[11px] text-muted-foreground/60 mt-0.5">
+        <div className="flex items-center gap-3 text-[11px] font-medium text-muted-foreground mt-0.5">
           <span>{book.lore.length} lore</span>
           <span>·</span>
           <span>{book.cores.length} cores</span>
@@ -736,7 +736,7 @@ function BookRow({
       </div>
       <ChevronRight className={cn(
         "h-4 w-4 shrink-0 transition-colors",
-        isActive ? "text-primary" : "text-muted-foreground/30"
+        isActive ? "text-primary" : "text-muted-foreground"
       )} />
     </button>
   );
@@ -1008,17 +1008,17 @@ function StoryCanvasApp() {
               </button>
             )}
             <div className="flex flex-col leading-tight">
-              <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 LoreWeave
               </span>
-              <span className="text-sm font-semibold">Your Library</span>
+              <span className="text-sm font-semibold text-foreground">Your Library</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setSettingsOpen(true)}
               aria-label="Settings"
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-border/70 bg-card hover:bg-muted"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-border/80 bg-card hover:bg-muted text-foreground transition-colors"
             >
               <Settings className="h-4 w-4" />
             </button>
@@ -1039,12 +1039,12 @@ function StoryCanvasApp() {
             <div className="mx-auto max-w-5xl px-5 py-6">
               {/* Composer: the entry point */}
               <div className="mx-auto max-w-2xl text-center mb-8">
-                <h1 className="font-serif text-3xl font-semibold">What are we building today?</h1>
+                <h1 className="font-serif text-3xl font-semibold text-foreground">What are we building today?</h1>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Describe an idea, a character, a scene — LoreWeave opens a new book around it.
                 </p>
                 
-                <div className="mt-6 rounded-3xl border border-border/70 bg-card p-3 shadow-sm transition focus-within:border-primary/40 focus-within:ring-4 focus-within:ring-primary/10 text-left">
+                <div className="mt-6 rounded-3xl border border-border/80 bg-card p-3 shadow-sm transition focus-within:border-primary/60 focus-within:ring-4 focus-within:ring-primary/15 text-left">
                   <textarea
                     ref={composerRef}
                     value={composerValue}
@@ -1060,7 +1060,7 @@ function StoryCanvasApp() {
                     className="w-full resize-none bg-transparent px-2 py-1.5 text-[15px] leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none"
                   />
                   <div className="flex items-center justify-between px-2 pt-1">
-                    <span className="text-[11px] text-muted-foreground">
+                    <span className="text-[11px] font-medium text-muted-foreground">
                       Enter to start · Shift+Enter for a new line
                     </span>
                     <button
@@ -1078,7 +1078,7 @@ function StoryCanvasApp() {
                     <button
                       key={q.label}
                       onClick={() => handleQuickStart(q.seed)}
-                      className="rounded-full border border-primary/15 bg-primary/5 px-3.5 py-1.5 text-[12.5px] font-medium text-primary hover:bg-primary/10 transition-colors"
+                      className="rounded-full border border-border/80 bg-card px-3.5 py-1.5 text-[12.5px] font-medium text-foreground hover:bg-muted hover:border-primary/40 transition-colors shadow-sm"
                     >
                       {q.label}
                     </button>
@@ -1088,7 +1088,7 @@ function StoryCanvasApp() {
 
               {/* Your books header divider */}
               <div className="mt-12 mb-6 flex items-center gap-3">
-                <span className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                   Your books
                 </span>
                 <div className="h-px flex-1 bg-border/70" />

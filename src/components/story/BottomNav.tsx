@@ -25,12 +25,12 @@ export function BottomNav({ tab, onChange }: { tab: NavTab; onChange: (t: NavTab
               className={cn(
                 "group flex flex-col items-center justify-center gap-0.5 rounded-2xl py-1 transition active:scale-95",
                 active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted/60",
+                  ? "bg-primary text-primary-foreground font-semibold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted",
               )}
             >
               <Icon className="h-4 w-4" />
-              <span className={cn("text-[8px] font-medium", active ? "opacity-100" : "opacity-70")}>
+              <span className="text-[9px] font-medium">
                 {label}
               </span>
             </button>

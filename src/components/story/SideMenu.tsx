@@ -94,14 +94,14 @@ export function SideMenu({ books, onClose }: { books: BooksApi; onClose: () => v
               books.setActiveId(id);
               onClose();
             }}
-            className="flex w-full items-center gap-3.5 rounded-2xl border border-dashed border-border p-3 text-left transition hover:bg-muted/20"
+            className="flex w-full items-center gap-3.5 rounded-2xl border border-dashed border-border/80 p-3 text-left transition hover:bg-muted/40"
           >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted border border-border text-muted-foreground">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted border border-border text-foreground">
               <Plus className="h-5 w-5" />
             </div>
             <div className="flex-1 min-w-0">
-                <div className="text-[11px] font-bold text-muted-foreground">Create New Book</div>
-                <div className="text-[9px] text-muted-foreground/80">Draft a fresh manuscript</div>
+                <div className="text-[11px] font-bold text-foreground">Create New Book</div>
+                <div className="text-[9px] text-muted-foreground">Draft a fresh manuscript</div>
             </div>
           </button>
 
@@ -140,7 +140,7 @@ export function SideMenu({ books, onClose }: { books: BooksApi; onClose: () => v
           </div>
           <button
             onClick={exportData}
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[12.5px] hover:bg-muted transition font-medium"
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[12.5px] hover:bg-muted transition font-medium text-foreground"
           >
             <Download className="h-4 w-4 text-muted-foreground" /> Export backups
           </button>
