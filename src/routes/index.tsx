@@ -32,6 +32,7 @@ import {
   PanelLeftClose,
   Command,
   Keyboard,
+  Layers,
 } from "lucide-react";
 import { Sheet, SheetTrigger } from "@/components/ui/sheet";
 import { useBooks } from "@/lib/story-store";
