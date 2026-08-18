@@ -32,13 +32,12 @@ export function SideMenu({ books, onClose }: { books: BooksApi; onClose: () => v
     }
   }
 
-  return (
-    <SheetContent side="left" className="w-[88vw] max-w-sm border-r border-border p-0 bg-background text-foreground">
+  return <SheetContent side="left" className="w-[70vw] max-w-xs border-r border-border p-0 bg-background text-foreground">
       <div className="flex h-full flex-col">
         {/* Header */}
         <SheetHeader className="flex flex-row items-center justify-between border-b border-border/60 px-4 pb-3 pt-5 text-left shrink-0">
           <SheetTitle className="flex items-center gap-2 text-base font-semibold">
-            <Library className="h-4.5 w-4.5 text-primary" /> Library & Books
+            <Library className="h-4 w-4 text-primary" /> Library & Books
           </SheetTitle>
           <button
             onClick={onClose}
@@ -83,8 +82,8 @@ export function SideMenu({ books, onClose }: { books: BooksApi; onClose: () => v
               <Library className="h-5 w-5" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-[13px] font-bold text-foreground">Library Hub</div>
-              <div className="text-[10px] text-muted-foreground">Switch or create projects</div>
+              <div className="text-[11px] font-bold text-foreground">Library Hub</div>
+              <div className="text-[9px] text-muted-foreground">Switch or create projects</div>
             </div>
           </button>
 
@@ -101,8 +100,8 @@ export function SideMenu({ books, onClose }: { books: BooksApi; onClose: () => v
               <Plus className="h-5 w-5" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-[13px] font-bold text-muted-foreground">Create New Book</div>
-              <div className="text-[10px] text-muted-foreground/80">Draft a fresh manuscript</div>
+                <div className="text-[11px] font-bold text-muted-foreground">Create New Book</div>
+                <div className="text-[9px] text-muted-foreground/80">Draft a fresh manuscript</div>
             </div>
           </button>
 

@@ -124,11 +124,14 @@ function SidebarNav({
     <aside
       className={cn(
         "flex h-full flex-col border-r border-border/60 bg-card/50 backdrop-blur-xl transition-all duration-300 ease-out",
-        isOpen ? "w-[280px]" : "w-[68px]"
+        isOpen ? "w-[280px]" : "w-[52px]"
       )}
     >
       {/* Logo / Toggle */}
-      <div className="flex h-14 items-center gap-3 border-b border-border/40 px-4">
+      <div className={cn(
+        "flex h-14 items-center border-b border-border/40 px-3",
+        isOpen ? "gap-3" : "justify-center"
+      )}>
         <button
           onClick={onToggle}
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg hover:bg-muted transition-colors"
@@ -160,7 +163,7 @@ function SidebarNav({
           onClick={() => onCreateBook()}
           className={cn(
             "flex w-full items-center gap-2.5 rounded-xl bg-primary px-3 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-all hover:shadow-md active:scale-[0.98]",
-            !isOpen && "justify-center px-2"
+            !isOpen && "justify-center px-0"
           )}
         >
           <Plus className="h-4 w-4 shrink-0" />
@@ -197,12 +200,13 @@ function SidebarNav({
                   books.setActiveId(null);
                 }
               }}
+              title={!isOpen ? item.label : undefined}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm transition-colors",
                 activeSection === item.id
                   ? "bg-primary/10 text-primary font-medium"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                !isOpen && "h-9 w-9 justify-center p-0"
+                !isOpen && "h-8 w-8 justify-center p-0 mx-auto"
               )}
             >
               <item.icon className="h-4 w-4 shrink-0" />
@@ -279,18 +283,20 @@ function SidebarNav({
       )}>
         <button
           onClick={() => setActiveSection("trash")}
+          title={!isOpen ? "Trash" : undefined}
           className={cn(
             "flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-            !isOpen && "h-9 w-9 justify-center p-0"
+            !isOpen && "h-8 w-8 justify-center p-0 mx-auto"
           )}
         >
           <Trash2 className="h-4 w-4" />
           {isOpen && <span>Trash</span>}
         </button>
         <button
+          title={!isOpen ? "Shortcuts" : undefined}
           className={cn(
             "flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-            !isOpen && "h-9 w-9 justify-center p-0"
+            !isOpen && "h-8 w-8 justify-center p-0 mx-auto"
           )}
         >
           <Keyboard className="h-4 w-4" />
@@ -878,10 +884,36 @@ function StoryCanvasApp() {
                 <span className="truncate text-[13px] font-semibold">{active.name}</span>
               </div>
             </div>
+
+            {/* Desktop tab bar — hidden on mobile */}
+            <nav className="hidden lg:flex items-center gap-0.5 rounded-xl border border-border/50 bg-muted/40 p-1">
+              {([
+                { id: "chat" as NavTab, label: "Write", icon: Feather },
+                { id: "brainstorm" as NavTab, label: "Brainstorm", icon: Sparkles },
+                { id: "lore" as NavTab, label: "Lore", icon: BookOpen },
+                { id: "cores" as NavTab, label: "Cores", icon: Layers },
+                { id: "studio" as NavTab, label: "Studio", icon: Command },
+              ] as const).map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setTab(id)}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
+                    tab === id
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                  )}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {label}
+                </button>
+              ))}
+            </nav>
+
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setComposerOpen(true)}
-                className="flex h-8 items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 text-xs font-medium hover:bg-muted transition-colors"
+                className="hidden lg:flex h-8 items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 text-xs font-medium hover:bg-muted transition-colors"
               >
                 <Plus className="h-3.5 w-3.5" /> New
               </button>
@@ -931,7 +963,10 @@ function StoryCanvasApp() {
             {tab === "studio" && <StudioTab books={books} onOpenTab={setTab} />}
           </main>
 
-          <BottomNav tab={tab} onChange={setTab} />
+          {/* BottomNav — mobile only */}
+          <div className="lg:hidden">
+            <BottomNav tab={tab} onChange={setTab} />
+          </div>
           <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
           {galleryOpen && <CharacterGallery books={books} onClose={() => setGalleryOpen(false)} />}
           <ComposerModal

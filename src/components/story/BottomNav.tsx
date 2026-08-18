@@ -23,16 +23,14 @@ export function BottomNav({ tab, onChange }: { tab: NavTab; onChange: (t: NavTab
               aria-label={label}
               onClick={() => onChange(id)}
               className={cn(
-                "group flex flex-col items-center justify-center gap-0.5 rounded-2xl py-2 transition active:scale-95",
+                "group flex flex-col items-center justify-center gap-0.5 rounded-2xl py-1 transition active:scale-95",
                 active
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-muted/60",
               )}
             >
-              <Icon className="h-5 w-5" />
-              <span
-                className={cn("text-[9.5px] font-medium", active ? "opacity-100" : "opacity-70")}
-              >
+              <Icon className="h-4 w-4" />
+              <span className={cn("text-[8px] font-medium", active ? "opacity-100" : "opacity-70")}>
                 {label}
               </span>
             </button>
