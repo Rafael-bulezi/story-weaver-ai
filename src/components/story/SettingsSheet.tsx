@@ -196,6 +196,8 @@ export function SettingsSheet({
                     onChange={(e) => setSettings({ writingModel: e.target.value })}
                     className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs outline-none text-foreground"
                   >
+                    <option value="qwen/qwen3.6-27b">Qwen 3.6 27B (Groq / OpenRouter)</option>
+                    <option value="qwen-2.5-32b">Qwen 2.5 32B (Groq)</option>
                     <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Groq - Default)</option>
                     <option value="gpt-4o">GPT-4o (OpenAI)</option>
                     <option value="gpt-4o-mini">GPT-4o Mini (OpenAI)</option>
@@ -221,6 +223,7 @@ export function SettingsSheet({
                     onChange={(e) => setSettings({ architectModel: e.target.value })}
                     className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs outline-none text-foreground"
                   >
+                    <option value="qwen/qwen3.6-27b">Qwen 3.6 27B (Groq / OpenRouter)</option>
                     <option value="llama-3.1-8b-instant">Llama 3.1 8B (Groq - Default)</option>
                     <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Groq)</option>
                     <option value="gpt-4o-mini">GPT-4o Mini (OpenAI)</option>

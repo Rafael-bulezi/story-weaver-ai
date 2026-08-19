@@ -140,7 +140,7 @@ export async function invokeAssistant({
     baseUrl = import.meta.env.VITE_AI_BASE_URL || "https://api.groq.com/openai/v1";
     
     // Default model if none configured
-    if (!modelName || modelName === "llama-3.3-70b-versatile" || modelName === "gemma2-9b-it" || modelName === "llama-3.1-8b-instant") {
+    if (!modelName) {
       finalModel = isArchitect ? "llama-3.1-8b-instant" : "llama-3.3-70b-versatile";
     }
   }

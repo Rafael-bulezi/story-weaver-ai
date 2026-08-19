@@ -46,8 +46,8 @@ const DEFAULT_SETTINGS: SettingsState = {
   accentColor: "purple",
   fontFamily: "serif",
   fontSize: "md",
-  writingModel: "llama-3.3-70b-versatile",
-  architectModel: "llama-3.1-8b-instant",   // gemma2-9b-it was decommissioned
+  writingModel: "qwen/qwen3.6-27b",
+  architectModel: "llama-3.1-8b-instant",
   apiKeys: {
     groq: "",
     openai: "",
