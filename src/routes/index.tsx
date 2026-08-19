@@ -106,6 +106,51 @@ function SidebarNav({
   const [activeSection, setActiveSection] = useState<"library" | "recent" | "favorites" | "trash">("library");
   const [searchQuery, setSearchQuery] = useState("");
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [trashedBooks, setTrashedBooks] = useState<Array<{ id: string; name: string; cover: string; deletedAt: number; snapshot: unknown }>>([]);
+
+  // Load trash from localStorage
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("sc:trash:v1");
+      if (raw) setTrashedBooks(JSON.parse(raw));
+    } catch { /* ignore */ }
+  }, []);
+
+  function saveTrashed(next: typeof trashedBooks) {
+    setTrashedBooks(next);
+    localStorage.setItem("sc:trash:v1", JSON.stringify(next));
+  }
+
+  function moveToTrash(bookId: string) {
+    const book = books.books.find((b) => b.id === bookId);
+    if (!book) return;
+    const entry = { id: book.id, name: book.name, cover: book.cover ?? "◇", deletedAt: Date.now(), snapshot: book };
+    saveTrashed([entry, ...trashedBooks]);
+    books.deleteBook(bookId);
+  }
+
+  function restoreFromTrash(trashEntry: { id: string; name: string; cover: string; deletedAt: number; snapshot: unknown }) {
+    books.createBook(trashEntry.snapshot as Parameters<typeof books.createBook>[0]);
+    saveTrashed(trashedBooks.filter((t) => t.id !== trashEntry.id));
+  }
+
+  function permanentlyDelete(trashId: string) {
+    saveTrashed(trashedBooks.filter((t) => t.id !== trashId));
+  }
+
+  // Keyboard shortcut: Cmd+K / Ctrl+K opens shortcut panel
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setShowShortcuts((v) => !v);
+      }
+      if (e.key === "Escape") setShowShortcuts(false);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   const filteredBooks = books.books.filter((b) =>
     b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -231,51 +276,139 @@ function SidebarNav({
               {activeSection === "library" && "All Stories"}
               {activeSection === "recent" && "Recently Opened"}
               {activeSection === "favorites" && "Favorites"}
+              {activeSection === "trash" && `Trash · ${trashedBooks.length}`}
             </div>
-            {(activeSection === "library" ? filteredBooks : activeSection === "recent" ? recentItems : favoriteItems).map((b) => (
-              <button
+
+            {/* Trash section */}
+            {activeSection === "trash" && (
+              trashedBooks.length === 0 ? (
+                <div className="px-3 py-6 text-center text-xs text-muted-foreground">
+                  Trash is empty
+                </div>
+              ) : (
+                trashedBooks.map((t) => (
+                  <div key={t.id} className="group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-foreground hover:bg-muted transition-colors">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-foreground font-semibold text-xs font-serif">
+                      {t.cover}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium text-muted-foreground line-through">{t.name}</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        Deleted {new Date(t.deletedAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => restoreFromTrash(t)}
+                        title="Restore"
+                        className="rounded p-1 text-xs text-primary hover:bg-primary/10 font-semibold"
+                      >
+                        ↩
+                      </button>
+                      <button
+                        onClick={() => { if (confirm(`Permanently delete "${t.name}"?`)) permanentlyDelete(t.id); }}
+                        title="Delete forever"
+                        className="rounded p-1 text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )
+            )}
+
+            {/* Normal book list */}
+            {activeSection !== "trash" && (activeSection === "library" ? filteredBooks : activeSection === "recent" ? recentItems : favoriteItems).map((b) => (
+              <div
                 key={b.id}
-                onClick={() => onSelectBook(b.id)}
-                onMouseEnter={() => setHoveredItem(b.id)}
-                onMouseLeave={() => setHoveredItem(null)}
                 className={cn(
                   "group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors",
                   activeBookId === b.id
                     ? "bg-primary/15 text-primary"
                     : "text-foreground hover:bg-muted"
                 )}
+                onMouseEnter={() => setHoveredItem(b.id)}
+                onMouseLeave={() => setHoveredItem(null)}
               >
-                <div
-                  className={cn(
-                    "flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs font-serif",
-                    activeBookId === b.id
-                      ? "bg-primary/20 text-primary"
-                      : "bg-muted text-foreground font-semibold"
-                  )}
+                <button
+                  className="flex min-w-0 flex-1 items-center gap-2.5"
+                  onClick={() => onSelectBook(b.id)}
                 >
-                  {b.cover ?? "◇"}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className={cn(
-                    "truncate text-sm font-medium",
-                    activeBookId === b.id ? "text-primary font-semibold" : "text-foreground"
-                  )}>
-                    {b.name}
+                  <div
+                    className={cn(
+                      "flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs font-serif",
+                      activeBookId === b.id
+                        ? "bg-primary/20 text-primary"
+                        : "bg-muted text-foreground font-semibold"
+                    )}
+                  >
+                    {b.cover ?? "◇"}
                   </div>
-                  {b.title && (
-                    <div className="truncate text-[11px] text-muted-foreground">
-                      {b.title}
+                  <div className="min-w-0 flex-1">
+                    <div className={cn(
+                      "truncate text-sm font-medium",
+                      activeBookId === b.id ? "text-primary font-semibold" : "text-foreground"
+                    )}>
+                      {b.name}
                     </div>
-                  )}
-                </div>
+                    {b.title && (
+                      <div className="truncate text-[11px] text-muted-foreground">
+                        {b.title}
+                      </div>
+                    )}
+                  </div>
+                </button>
                 {hoveredItem === b.id && (
-                  <MoreHorizontal className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <button
+                    onClick={() => { if (confirm(`Move "${b.name}" to Trash?`)) moveToTrash(b.id); }}
+                    title="Move to Trash"
+                    className="rounded p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 )}
-              </button>
+              </div>
             ))}
           </div>
         )}
       </nav>
+
+      {/* Shortcuts modal */}
+      {showShortcuts && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={() => setShowShortcuts(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-card border border-border/60 shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-border/40 px-5 py-4">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Keyboard className="h-4 w-4 text-primary" /> Keyboard Shortcuts
+              </div>
+              <button onClick={() => setShowShortcuts(false)} className="rounded-full p-1 hover:bg-muted text-muted-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="p-4 space-y-1 text-sm">
+              {[
+                ["⌘K / Ctrl+K", "Open shortcuts"],
+                ["⌘N / Ctrl+N", "New book"],
+                ["⌘S / Ctrl+S", "Save chapter"],
+                ["⌘B / Ctrl+B", "Toggle sidebar"],
+                ["Esc", "Close modals / panels"],
+              ].map(([key, label]) => (
+                <div key={key} className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-muted/50 transition-colors">
+                  <span className="text-foreground">{label}</span>
+                  <kbd className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-mono text-muted-foreground border border-border/60">{key}</kbd>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bottom Actions */}
       <div className={cn(
@@ -286,15 +419,20 @@ function SidebarNav({
           onClick={() => setActiveSection("trash")}
           title={!isOpen ? "Trash" : undefined}
           className={cn(
-            "flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm text-foreground transition-colors hover:bg-muted",
+            "flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm transition-colors hover:bg-muted",
+            activeSection === "trash" ? "bg-muted text-foreground font-medium" : "text-foreground",
             !isOpen && "h-8 w-8 justify-center p-0 mx-auto"
           )}
         >
           <Trash2 className="h-4 w-4" />
-          {isOpen && <span>Trash</span>}
+          {isOpen && <span className="flex-1">Trash</span>}
+          {isOpen && trashedBooks.length > 0 && (
+            <span className="text-[10px] font-semibold text-muted-foreground">{trashedBooks.length}</span>
+          )}
         </button>
         <button
-          title={!isOpen ? "Shortcuts" : undefined}
+          onClick={() => setShowShortcuts(true)}
+          title={!isOpen ? "Shortcuts (⌘K)" : undefined}
           className={cn(
             "flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm text-foreground transition-colors hover:bg-muted",
             !isOpen && "h-8 w-8 justify-center p-0 mx-auto"
@@ -770,6 +908,31 @@ function StoryCanvasApp() {
     applySettingsThemeAndAccent(settings);
   }, []);
 
+  // Global keyboard shortcuts
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod) return;
+      if (e.key === "n" || e.key === "N") {
+        // Don't intercept if user is typing in an input/textarea
+        if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA") return;
+        e.preventDefault();
+        setComposerOpen(true);
+      }
+      if (e.key === "s" || e.key === "S") {
+        if (document.activeElement?.tagName === "INPUT") return;
+        e.preventDefault();
+        if (books.active) books.saveChapter("draft");
+      }
+      if (e.key === "b" || e.key === "B") {
+        e.preventDefault();
+        setSideOpen((v) => !v);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [books, setSideOpen]);
+
   // Track recently opened books
   const handleSelectBook = useCallback((id: string) => {
     setRecentBooks((prev) => {
@@ -879,42 +1042,17 @@ function StoryCanvasApp() {
                 </button>
               )}
               <div className="flex min-w-0 flex-col leading-tight">
-                <span className="text-[9px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                   {active.title || "Book"}
                 </span>
-                <span className="truncate text-[13px] font-semibold">{active.name}</span>
+                <span className="truncate text-[13px] font-semibold text-foreground">{active.name}</span>
               </div>
             </div>
-
-            {/* Desktop tab bar — hidden on mobile */}
-            <nav className="hidden lg:flex items-center gap-0.5 rounded-xl border border-border/50 bg-muted/40 p-1">
-              {([
-                { id: "chat" as NavTab, label: "Write", icon: Feather },
-                { id: "brainstorm" as NavTab, label: "Brainstorm", icon: Sparkles },
-                { id: "lore" as NavTab, label: "Lore", icon: BookOpen },
-                { id: "cores" as NavTab, label: "Cores", icon: Layers },
-                { id: "studio" as NavTab, label: "Studio", icon: Command },
-              ] as const).map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  onClick={() => setTab(id)}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
-                    tab === id
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground hover:bg-background/50"
-                  )}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  {label}
-                </button>
-              ))}
-            </nav>
 
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setComposerOpen(true)}
-                className="hidden lg:flex h-8 items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 text-xs font-medium hover:bg-muted transition-colors"
+                className="flex h-8 items-center gap-1.5 rounded-full bg-primary px-3 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
               >
                 <Plus className="h-3.5 w-3.5" /> New
               </button>
@@ -922,14 +1060,14 @@ function StoryCanvasApp() {
                 onClick={() => setGalleryOpen(true)}
                 aria-label="Character gallery"
                 title="Character gallery"
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/70 bg-card hover:bg-muted"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/70 bg-card hover:bg-muted text-foreground"
               >
                 <Users className="h-3.5 w-3.5" />
               </button>
               <button
                 onClick={() => setSettingsOpen(true)}
                 aria-label="Settings"
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/70 bg-card hover:bg-muted"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/70 bg-card hover:bg-muted text-foreground"
               >
                 <Settings className="h-3.5 w-3.5" />
               </button>
@@ -939,7 +1077,7 @@ function StoryCanvasApp() {
                 trigger={
                   <button
                     aria-label="Chapters"
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/70 bg-card hover:bg-muted"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/70 bg-card hover:bg-muted text-foreground"
                   >
                     <BookMarked className="h-3.5 w-3.5" />
                   </button>
@@ -964,10 +1102,8 @@ function StoryCanvasApp() {
             {tab === "studio" && <StudioTab books={books} onOpenTab={setTab} />}
           </main>
 
-          {/* BottomNav — mobile only */}
-          <div className="lg:hidden">
-            <BottomNav tab={tab} onChange={setTab} />
-          </div>
+          {/* BottomNav — always on bottom */}
+          <BottomNav tab={tab} onChange={setTab} />
           <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
           {galleryOpen && <CharacterGallery books={books} onClose={() => setGalleryOpen(false)} />}
           <ComposerModal
