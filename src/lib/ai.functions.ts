@@ -17,6 +17,7 @@ const InvokeInput = z.object({
     "cores_ask",
     "rewrite",
     "quick_query",
+    "summarize",
   ]),
   action: z.string(),
   context: z.string(),
@@ -60,9 +61,21 @@ Stay grounded in the provided cores/lore. Use markdown when it helps readability
     "MODE: Rewriter. Take the given last user message and last assistant reply, and produce a STRONGER rewritten version of the assistant reply — sharper prose, tighter reasoning, better continuity with the cores/lore. Match the original's approximate length. Return ONLY the rewritten reply.",
   quick_query:
     "MODE: Quick Answer. You are a knowledgeable assistant. Answer the user's question concisely using your general knowledge — you may draw on writing craft, mythology, history, science, or any relevant domain. Keep answers short (2–5 sentences) unless the user explicitly asks for more. Be direct and useful.",
+  summarize:
+    "MODE: Story Summarizer / Canon README. Produce a crisp, coherent, living overview of the story's current state and canon trajectory (150–250 words max). Synthesize key characters, factions, core conflicts, world rules, and recent chapter events. Return ONLY the narrative overview without markdown title headers or conversational filler.",
 };
 
-// Cost tracking helpers
+// Cost and Request tracking helpers
+export interface CostTrackingData {
+  writing: number;
+  architect: number;
+  total: number;
+  writingCalls: number;
+  architectCalls: number;
+  totalCalls: number;
+  lastCallAt?: string;
+}
+
 function trackCost(brainType: "writing" | "architect", inputText: string, outputText: string) {
   if (typeof window === "undefined") return;
   
@@ -78,10 +91,20 @@ function trackCost(brainType: "writing" | "architect", inputText: string, output
 
   try {
     const rawCost = localStorage.getItem("sc:costs:v1");
-    const currentCosts = rawCost ? JSON.parse(rawCost) : { writing: 0, architect: 0, total: 0 };
+    const currentCosts: CostTrackingData = rawCost
+      ? JSON.parse(rawCost)
+      : { writing: 0, architect: 0, total: 0, writingCalls: 0, architectCalls: 0, totalCalls: 0 };
     
     currentCosts[brainType] = (currentCosts[brainType] || 0) + cost;
     currentCosts.total = (currentCosts.total || 0) + cost;
+
+    if (brainType === "writing") {
+      currentCosts.writingCalls = (currentCosts.writingCalls || 0) + 1;
+    } else {
+      currentCosts.architectCalls = (currentCosts.architectCalls || 0) + 1;
+    }
+    currentCosts.totalCalls = (currentCosts.totalCalls || 0) + 1;
+    currentCosts.lastCallAt = new Date().toISOString();
     
     localStorage.setItem("sc:costs:v1", JSON.stringify(currentCosts));
   } catch (e) {
@@ -104,7 +127,7 @@ export async function invokeAssistant({
   
   // Determine if it is a Writing Brain or Architect Brain task
   // quick_query stays on writing brain for better general knowledge quality
-  const isArchitect = ["extract", "categorize", "suggest_fix", "cores_ask"].includes(data.mode);
+  const isArchitect = ["extract", "categorize", "suggest_fix", "cores_ask", "summarize"].includes(data.mode);
   const brainType = isArchitect ? "architect" : "writing";
   const modelName = isArchitect ? settings.architectModel : settings.writingModel;
 

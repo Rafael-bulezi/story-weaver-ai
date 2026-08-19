@@ -45,8 +45,16 @@ export function SettingsSheet({
     toastSuccess("API Keys & Endpoints saved");
   };
 
-  // Get live cost tracking stats from localStorage
-  const [costs, setCosts] = useState({ writing: 0, architect: 0, total: 0 });
+  // Get live cost and request tracking stats from localStorage
+  const [costs, setCosts] = useState({
+    writing: 0,
+    architect: 0,
+    total: 0,
+    writingCalls: 0,
+    architectCalls: 0,
+    totalCalls: 0,
+    lastCallAt: undefined as string | undefined,
+  });
   useEffect(() => {
     if (!open) return;
     try {
@@ -60,10 +68,10 @@ export function SettingsSheet({
   }, [open]);
 
   const resetCosts = () => {
-    const fresh = { writing: 0, architect: 0, total: 0 };
+    const fresh = { writing: 0, architect: 0, total: 0, writingCalls: 0, architectCalls: 0, totalCalls: 0 };
     localStorage.setItem("sc:costs:v1", JSON.stringify(fresh));
     setCosts(fresh);
-    toastSuccess("Cost counters reset");
+    toastSuccess("Cost and request counters reset");
   };
 
   if (!open) return null;
@@ -354,25 +362,53 @@ export function SettingsSheet({
             {activeTab === "cost" && (
               <div className="space-y-4">
                 <div>
-                  <h3 className="font-serif text-base font-bold text-foreground">Cost Dashboard</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">Real-time spend estimation from local API calls.</p>
+                  <h3 className="font-serif text-base font-bold text-foreground">Cost & Request Dashboard</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">Real-time spend and API request telemetry from assistant calls.</p>
                 </div>
 
+                {/* API Request Calls */}
                 <div className="grid grid-cols-3 gap-3">
-                  <CostCard label="Writing Brain" value={costs.writing} description="Large Model Spend" />
-                  <CostCard label="Architect Brain" value={costs.architect} description="Extraction Spend" />
-                  <CostCard label="Total Cost" value={costs.total} description="Total Accumulated" highlight />
+                  <div className="rounded-2xl border border-border bg-card/40 p-3.5 text-left shadow-sm">
+                    <span className="block text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Writing Calls</span>
+                    <span className="block text-xl font-bold font-mono mt-1 text-foreground">
+                      {costs.writingCalls || 0}
+                    </span>
+                    <span className="block text-[9px] text-muted-foreground mt-0.5">Prose & scenes</span>
+                  </div>
+
+                  <div className="rounded-2xl border border-border bg-card/40 p-3.5 text-left shadow-sm">
+                    <span className="block text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Architect Calls</span>
+                    <span className="block text-xl font-bold font-mono mt-1 text-foreground">
+                      {costs.architectCalls || 0}
+                    </span>
+                    <span className="block text-[9px] text-muted-foreground mt-0.5">Lore & indexing</span>
+                  </div>
+
+                  <div className="rounded-2xl border border-primary/40 bg-primary/5 p-3.5 text-left shadow-sm">
+                    <span className="block text-[10px] text-primary font-semibold uppercase tracking-wider">Total Requests</span>
+                    <span className="block text-xl font-bold font-mono mt-1 text-primary">
+                      {costs.totalCalls || 0}
+                    </span>
+                    <span className="block text-[9px] text-muted-foreground mt-0.5">API requests</span>
+                  </div>
+                </div>
+
+                {/* Estimated Cost Breakdown */}
+                <div className="grid grid-cols-3 gap-3">
+                  <CostCard label="Writing Spend" value={costs.writing} description="Large Model Cost" />
+                  <CostCard label="Architect Spend" value={costs.architect} description="Small Model Cost" />
+                  <CostCard label="Estimated Total" value={costs.total} description="Total Accumulated" highlight />
                 </div>
 
                 <div className="flex flex-col gap-3 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-950 p-4 mt-2">
-                  <h4 className="text-xs font-bold text-indigo-700 dark:text-indigo-400">Architect Brain Cost Advantage</h4>
+                  <h4 className="text-xs font-bold text-indigo-700 dark:text-indigo-400">Request & Cost Advantage</h4>
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    By offloading extraction, naming, and list indexing to the Architect Brain (e.g. Gemma 9B or Qwen 8B), costs are reduced by over 95% compared to using a Large Brain (e.g. Claude 3.5 or GPT-4o) for simple structured metadata generation.
+                    Every AI action (scene generation, lore extraction, plot check, brainstorm query) is counted as an atomic API request. Offloading extraction and indexing requests to the lightweight Architect Brain keeps token usage and API latency ultra-low.
                   </p>
                 </div>
 
                 <Button size="sm" variant="outline" className="w-full rounded-xl" onClick={resetCosts}>
-                  Reset Cost Counters
+                  Reset Request & Cost Counters
                 </Button>
               </div>
             )}

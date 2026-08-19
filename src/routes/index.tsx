@@ -90,6 +90,7 @@ function SidebarNav({
   books,
   onCreateBook,
   onSelectBook,
+  onOpenReadme,
   activeBookId,
   recentBooks,
   favorites,
@@ -99,6 +100,7 @@ function SidebarNav({
   books: ReturnType<typeof useBooks>;
   onCreateBook: (mode?: ComposerMode) => void;
   onSelectBook: (id: string) => void;
+  onOpenReadme?: () => void;
   activeBookId: string | null;
   recentBooks: string[];
   favorites: string[];
@@ -264,6 +266,22 @@ function SidebarNav({
               )}
             </button>
           ))}
+
+          {activeBookId && onOpenReadme && (
+            <button
+              onClick={onOpenReadme}
+              title={!isOpen ? "Project README" : undefined}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm transition-colors text-primary hover:bg-primary/10",
+                !isOpen && "h-8 w-8 justify-center p-0 mx-auto"
+              )}
+            >
+              <BookMarked className="h-4 w-4 shrink-0" />
+              {isOpen && (
+                <span className="flex-1 text-left font-medium">Project Overview</span>
+              )}
+            </button>
+          )}
         </div>
 
         {/* Divider */}
@@ -1023,6 +1041,7 @@ function StoryCanvasApp() {
           books={books}
           onCreateBook={handleQuickCreate}
           onSelectBook={handleSelectBook}
+          onOpenReadme={() => setTab("studio")}
           activeBookId={active.id}
           recentBooks={recentBooks}
           favorites={favorites}
