@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toastSuccess, toastError, toastInfo } from "@/lib/toast";
 import {
   User,
@@ -24,11 +24,14 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { FloatingAddMenu } from "@/components/story/FloatingAddMenu";
 
-export function LoreTab({ books }: { books: BooksApi }) {
+export function LoreTab({ books, highlightId }: { books: BooksApi; highlightId?: string }) {
   const active = books.active!;
   const [tab, setTab] = useState<LoreType>("character");
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(true);
+  const [flashId, setFlashId] = useState<string | null>(null);
+  const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return active.lore.filter(
@@ -43,6 +46,22 @@ export function LoreTab({ books }: { books: BooksApi }) {
   const [viewImage, setViewImage] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [pending, setPending] = useState<LoreType | null>(null);
+
+  // When highlightId changes, switch to the correct type tab and scroll to item
+  useEffect(() => {
+    if (!highlightId) return;
+    const target = active.lore.find((l) => l.id === highlightId);
+    if (!target) return;
+    setTab(target.type);
+    setFlashId(highlightId);
+    // After a short delay to let render settle, scroll to the item
+    setTimeout(() => {
+      const el = itemRefs.current[highlightId];
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      // Clear flash after 2.5s
+      setTimeout(() => setFlashId(null), 2500);
+    }, 120);
+  }, [highlightId, active.lore]);
 
   const tabs: { id: LoreType; label: string; icon: React.ElementType }[] = [
     { id: "character", label: "Characters", icon: User },
@@ -102,18 +121,27 @@ export function LoreTab({ books }: { books: BooksApi }) {
           </div>
         )}
         {filtered.map((item) => (
-          <LoreRow
+          <div
             key={item.id}
-            item={item}
-            onSave={(patch) => {
-              books.updateLore(item.id, patch);
-              toastSuccess("Updated");
-            }}
-            onDelete={() => books.removeLore(item.id)}
-            onViewImage={() => item.imageUrl && setViewImage(item.imageUrl)}
-          />
+            ref={(el) => { itemRefs.current[item.id] = el; }}
+            className={cn(
+              "rounded-2xl transition-all duration-300",
+              flashId === item.id && "ring-2 ring-primary ring-offset-2 shadow-lg"
+            )}
+          >
+            <LoreRow
+              item={item}
+              onSave={(patch) => {
+                books.updateLore(item.id, patch);
+                toastSuccess("Updated");
+              }}
+              onDelete={() => books.removeLore(item.id)}
+              onViewImage={() => item.imageUrl && setViewImage(item.imageUrl)}
+            />
+          </div>
         ))}
       </div>
+
 
       {pending && (
         <div

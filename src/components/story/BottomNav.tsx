@@ -1,4 +1,4 @@
-import { Feather, Sparkles, BookOpen, Layers, BookMarked } from "lucide-react";
+import { Feather, Sparkles, BookOpen, Layers, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type NavTab = "chat" | "brainstorm" | "lore" | "cores" | "studio";
@@ -8,7 +8,7 @@ const NAV: { id: NavTab; label: string; icon: typeof Feather }[] = [
   { id: "brainstorm", label: "Brainstorm", icon: Sparkles },
   { id: "lore", label: "Lore", icon: BookOpen },
   { id: "cores", label: "Cores", icon: Layers },
-  { id: "studio", label: "README", icon: BookMarked },
+  { id: "studio", label: "Studio", icon: LayoutDashboard },
 ];
 
 export function BottomNav({ tab, onChange }: { tab: NavTab; onChange: (t: NavTab) => void }) {

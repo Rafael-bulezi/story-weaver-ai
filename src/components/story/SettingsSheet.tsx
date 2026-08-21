@@ -8,20 +8,58 @@ import {
   Coins,
   Palette,
   Check,
+  Keyboard,
+  Trash2,
 } from "lucide-react";
 import { useSettings, type AccentColorType, type ResponseLengthType } from "@/lib/settings-store";
 import { toastSuccess } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
+import type { BooksApi } from "@/lib/story-store";
 
 export function SettingsSheet({
   open,
   onOpenChange,
+  books,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  books?: BooksApi;
 }) {
   const [settings, setSettings] = useSettings();
-  const [activeTab, setActiveTab] = useState<"general" | "models" | "behavior" | "cost">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "models" | "behavior" | "cost" | "shortcuts" | "trash">("general");
+  const [trashedBooks, setTrashedBooks] = useState<Array<{ id: string; name: string; cover: string; deletedAt: number; snapshot: unknown }>>([]);
+
+  // Load trash from localStorage
+  useEffect(() => {
+    if (!open) return;
+    try {
+      const raw = localStorage.getItem("sc:trash:v1");
+      if (raw) setTrashedBooks(JSON.parse(raw));
+    } catch { /* ignore */ }
+  }, [open]);
+
+  function saveTrashed(next: typeof trashedBooks) {
+    setTrashedBooks(next);
+    localStorage.setItem("sc:trash:v1", JSON.stringify(next));
+  }
+
+  function restoreFromTrash(trashEntry: { id: string; name: string; cover: string; deletedAt: number; snapshot: unknown }) {
+    if (books) {
+      books.createBook(trashEntry.snapshot as Parameters<typeof books.createBook>[0]);
+    }
+    saveTrashed(trashedBooks.filter((t) => t.id !== trashEntry.id));
+    toastSuccess(`Restored "${trashEntry.name}" to your library`);
+  }
+
+  function permanentlyDelete(trashId: string) {
+    saveTrashed(trashedBooks.filter((t) => t.id !== trashId));
+    toastSuccess("Story permanently deleted");
+  }
+
+  function emptyAllTrash() {
+    saveTrashed([]);
+    toastSuccess("Trash emptied");
+  }
 
   // Local state for live API key editing
   const [keys, setKeys] = useState(settings.apiKeys);
@@ -128,10 +166,155 @@ export function SettingsSheet({
               active={activeTab === "cost"}
               onClick={() => setActiveTab("cost")}
             />
+            <TabBtn
+              icon={Keyboard}
+              label="Shortcuts"
+              active={activeTab === "shortcuts"}
+              onClick={() => setActiveTab("shortcuts")}
+            />
+            <TabBtn
+              icon={Trash2}
+              label={`Trash (${trashedBooks.length})`}
+              active={activeTab === "trash"}
+              onClick={() => setActiveTab("trash")}
+            />
           </div>
 
           {/* Right Content Panels */}
           <div className="thin-scrollbar flex-1 overflow-y-auto px-6 py-5 space-y-5">
+            {activeTab === "trash" && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Trash2 className="h-5 w-5 text-destructive" />
+                    <div>
+                      <h3 className="font-serif text-base font-bold text-foreground">Trash & Deleted Stories</h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Recover accidentally deleted stories or delete them permanently.
+                      </p>
+                    </div>
+                  </div>
+                  {trashedBooks.length > 0 && (
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => {
+                        if (confirm("Permanently empty all items in trash?")) emptyAllTrash();
+                      }}
+                      className="rounded-xl text-xs h-8"
+                    >
+                      Empty Trash
+                    </Button>
+                  )}
+                </div>
+
+                <div className="space-y-2 mt-4">
+                  {trashedBooks.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-border/80 p-8 text-center text-sm text-muted-foreground">
+                      <Trash2 className="mx-auto mb-2 h-6 w-6 opacity-40" />
+                      Trash is empty.
+                    </div>
+                  ) : (
+                    trashedBooks.map((t) => (
+                      <div
+                        key={t.id}
+                        className="flex items-center justify-between rounded-xl border border-border/60 bg-card p-3 shadow-xs"
+                      >
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-serif font-bold text-foreground">
+                            {t.cover}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-xs font-semibold text-foreground line-through opacity-80">
+                              {t.name}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground">
+                              Deleted {new Date(t.deletedAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0 ml-3">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => restoreFromTrash(t)}
+                            className="rounded-lg h-7 px-2.5 text-xs text-primary font-medium"
+                          >
+                            Restore ↩
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              if (confirm(`Permanently delete "${t.name}"?`)) permanentlyDelete(t.id);
+                            }}
+                            className="rounded-lg h-7 px-2 text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+            {activeTab === "shortcuts" && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Keyboard className="h-5 w-5 text-primary" />
+                  <h3 className="font-serif text-base font-bold text-foreground">Keyboard Shortcuts</h3>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Quick navigation & workspace shortcuts to weave your stories at the speed of thought.
+                </p>
+
+                <div className="space-y-2 mt-4">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                    Tab Switching
+                  </div>
+                  {[
+                    { key: "Alt + Z", label: "Write (Chat Tab)" },
+                    { key: "Alt + X", label: "Brainstorm" },
+                    { key: "Alt + C", label: "Lore Inspector" },
+                    { key: "Alt + V", label: "World Cores" },
+                    { key: "Alt + B", label: "Studio" },
+                  ].map((s) => (
+                    <div
+                      key={s.key}
+                      className="flex items-center justify-between py-2 px-3 rounded-xl border border-border/50 bg-card/60"
+                    >
+                      <span className="text-xs font-medium text-foreground">{s.label}</span>
+                      <kbd className="rounded-lg bg-muted px-2 py-1 text-[11px] font-mono text-foreground font-semibold border border-border/60 shadow-xs">
+                        {s.key}
+                      </kbd>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-2 mt-6">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                    Workspace & Editing
+                  </div>
+                  {[
+                    { key: "⌘ / Ctrl + N", label: "New Story Modal" },
+                    { key: "⌘ / Ctrl + S", label: "Save Chapter Draft" },
+                    { key: "⌘ / Ctrl + B", label: "Toggle Sidebar" },
+                    { key: "Esc", label: "Close Modal / Popover" },
+                  ].map((s) => (
+                    <div
+                      key={s.key}
+                      className="flex items-center justify-between py-2 px-3 rounded-xl border border-border/50 bg-card/60"
+                    >
+                      <span className="text-xs font-medium text-foreground">{s.label}</span>
+                      <kbd className="rounded-lg bg-muted px-2 py-1 text-[11px] font-mono text-foreground font-semibold border border-border/60 shadow-xs">
+                        {s.key}
+                      </kbd>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {activeTab === "general" && (
               <div className="space-y-4">
                 <h3 className="font-serif text-base font-bold text-foreground">General Styling</h3>

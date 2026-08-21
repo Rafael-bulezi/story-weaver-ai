@@ -1,113 +1,54 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
+import type {
+  LoreType,
+  ChapterType,
+  BrainstormRole,
+  BrainstormMode,
+  BrainstormMessage,
+  LoreItem,
+  Chapter,
+  CoreBlock,
+  CoreAttachment,
+  Core,
+  Goal,
+  LorePendingUpdate,
+  Book,
+  Branch,
+  ContextUsage,
+  PinnedContextItem,
+} from "./story-types";
 
-export type LoreType = "character" | "place" | "concept" | "faction";
-export type ChapterType = "canon" | "draft";
-export type BrainstormRole = "user" | "assistant";
-export type BrainstormMode = "chat" | "critic" | "debater";
+export type {
+  LoreType,
+  ChapterType,
+  BrainstormRole,
+  BrainstormMode,
+  BrainstormMessage,
+  LoreItem,
+  Chapter,
+  CoreBlock,
+  CoreAttachment,
+  Core,
+  Goal,
+  LorePendingUpdate,
+  Book,
+  Branch,
+  ContextUsage,
+  PinnedContextItem,
+};
 
-export interface BrainstormMessage {
-  id: string;
-  role: BrainstormRole;
-  mode?: BrainstormMode;
-  content: string;
-  thought?: string;
-  createdAt: number;
-}
-
-
-export interface LoreItem {
-  id: string;
-  type: LoreType;
-  name: string;
-  role?: string;
-  description: string;
-  imageUrl?: string;
-}
-
-export interface Chapter {
-  id: string;
-  title: string;
-  content: string;
-  type: ChapterType;
-  savedAt: number;
-}
-
-export interface CoreBlock {
-  id: string;
-  title: string;
-  body: string;
-}
-
-export interface CoreAttachment {
-  id: string;
-  name: string;
-  mime: string;
-  dataUrl: string;
-  createdAt: number;
-}
-
-export interface Core {
-  id: string;
-  title: string;
-  emoji?: string;
-  blocks: CoreBlock[];
-  attachments?: CoreAttachment[];
-}
-
-export interface Goal {
-  id: string;
-  title: string;
-  text: string;
-  done: boolean;
-  coreId?: string;
-  createdAt: number;
-}
-
-/** Pending lore-update review: new candidate may be a duplicate of an existing lore item */
-export interface LorePendingUpdate {
-  id: string;
-  candidate: LoreItem;
-  /** existing lore item that is similar (similarity >= threshold) */
-  existingId: string;
-  similarity: number;
-  /** 0.0–1.0, AI confidence that this IS a new entry (low = more likely a duplicate) */
-  confidence: number;
-  createdAt: number;
-}
-
-
-
-export interface Book {
-  id: string;
-  name: string;
-  title: string;
-  subtitle?: string;
-  cover: string;
-  content: string;
-  overview?: string;
-  updatedAt: number;
-  lore: LoreItem[];
-  chapters: Chapter[];
-  cores: Core[];
-  brainstorm: BrainstormMessage[];
-  goals: Goal[];
-  candidates: LoreItem[];
-  /** Lore items pending user confirmation (possible duplicates) */
-  lorePending: LorePendingUpdate[];
-}
+export {
+  loreToPrompt,
+  coresToPrompt,
+  buildOverview,
+  buildBookContext,
+  buildSelectiveContext,
+  loreStringSimilarity,
+  findSimilarLore,
+} from "./story-helpers";
 
 const BOOKS_KEY = "sc:books:v4";
 const ACTIVE_KEY = "sc:active-book";
-
-export interface Branch {
-  id: string;
-  name: string;
-  baseBookId: string;
-  originMsgId?: string;
-  originSnippet?: string;
-  createdAt: number;
-}
-
 const BRANCHES_KEY = "sc:branches:v1";
 
 function readBranches(): Branch[] {
@@ -146,75 +87,8 @@ export function useBranches() {
   return { branches, createBranch, renameBranch, deleteBranch };
 }
 
-// Default lore definition
-const DEFAULT_LORE: LoreItem[] = [
-  {
-    id: "l1",
-    type: "character",
-    name: "Zeal",
-    role: "Protagonist",
-    description: "A Dawnborn who manipulates cyan light. Searching for the truth behind the Fracture.",
-  },
-  {
-    id: "l2",
-    type: "character",
-    name: "Nyra",
-    role: "Rogue Seer",
-    description: "Sees fragments of futures the Spire tries to erase.",
-  },
-  {
-    id: "l3",
-    type: "place",
-    name: "The Spire",
-    role: "Location",
-    description: "A governing spine cutting through Astrisol's upper haze.",
-  },
-  {
-    id: "l4",
-    type: "concept",
-    name: "Aetherlight",
-    role: "Power / Energy",
-    description: "The engineered luminance that structures every path in Astrisol.",
-  },
-];
-
-const DEFAULT_BOOKS: Book[] = [
-  {
-    id: "b1",
-    name: "Astrisol",
-    title: "Chapter 1 — The Dawnborn",
-    subtitle: "A city that moves before its people do",
-    cover: "✦",
-    content:
-      "Morning had no meaning in Astrisol.\n\nThe city moved before its people did. Ribbons of engineered light — thin, silent pathways — crossed above the structures like frozen currents in the sky.\n\nZeal stood at the edge of a descending light-ribbon, watching it fold into the distance like a thought that refused to finish forming.",
-    updatedAt: Date.now(),
-    lore: DEFAULT_LORE,
-    chapters: [],
-    cores: [
-      {
-        id: "core1",
-        title: "State of the World",
-        emoji: "◈",
-        blocks: [
-          {
-            id: "cb1",
-            title: "Era",
-            body: "Post-Fracture Astrisol, three generations after the sky split.",
-          },
-          {
-            id: "cb2",
-            title: "Technology",
-            body: "Aetherlight infrastructure — engineered luminance replaces roads, doors, contracts.",
-          },
-        ],
-      },
-    ],
-    brainstorm: [],
-    goals: [],
-    candidates: [],
-    lorePending: [],
-  },
-];
+export { DEFAULT_LORE, DEFAULT_BOOKS } from "./story-defaults";
+import { DEFAULT_BOOKS } from "./story-defaults";
 
 function read<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -290,7 +164,16 @@ export function useBooks() {
         setBooks(DEFAULT_BOOKS);
       }
     }
-    setActiveIdState(read<string | null>(ACTIVE_KEY, null));
+    const initialActive = read<string | null>(ACTIVE_KEY, null);
+    if (initialActive) {
+      setActiveIdState(initialActive);
+    } else if (stored && stored.length > 0) {
+      setActiveIdState(stored[0].id);
+      write(ACTIVE_KEY, stored[0].id);
+    } else {
+      setActiveIdState(DEFAULT_BOOKS[0].id);
+      write(ACTIVE_KEY, DEFAULT_BOOKS[0].id);
+    }
     setHydrated(true);
   }, []);
 
@@ -535,11 +418,13 @@ export function useBooks() {
   };
 
   // ---------- goals ----------
-  const addGoal = (title: string, coreId?: string) => {
+  const addGoal = (title: string, opts?: { coreId?: string; source?: "ai" | "user"; status?: "suggested" | "active" }) => {
     if (!active) return;
     const id = `g${Date.now()}`;
+    const source = opts?.source ?? "user";
+    const status = opts?.status ?? (source === "ai" ? "suggested" : "active");
     updateBook(active.id, (b) => ({
-      goals: [...b.goals, { id, title, text: title, done: false, coreId, createdAt: Date.now() }]
+      goals: [...b.goals, { id, title, text: title, done: false, coreId: opts?.coreId, createdAt: Date.now(), source, status }]
     }));
     return id;
   };
@@ -557,6 +442,13 @@ export function useBooks() {
     if (!active) return;
     updateBook(active.id, (b) => ({
       goals: b.goals.map((g) => g.id === goalId ? { ...g, ...patch } : g)
+    }));
+  };
+  /** Promote an AI-suggested goal to an active (user-confirmed) goal */
+  const acceptGoal = (goalId: string) => {
+    if (!active) return;
+    updateBook(active.id, (b) => ({
+      goals: b.goals.map((g) => g.id === goalId ? { ...g, status: "active" as const, source: "user" as const } : g)
     }));
   };
 
@@ -669,6 +561,24 @@ export function useBooks() {
     [active, activeBranchId, addBranchMessage, updateBook],
   );
 
+  const updateBrainstorm = useCallback(
+    (id: string, patch: Partial<BrainstormMessage>) => {
+      if (activeBranchId) {
+        const targetId = activeBranchId ?? "main";
+        const msgs = branchMessages[targetId] ?? [];
+        const nextMsgs = msgs.map((m) => (m.id === id ? { ...m, ...patch } : m));
+        const next = { ...branchMessages, [targetId]: nextMsgs };
+        persistBranchMessages(next);
+        return;
+      }
+      if (!active) return;
+      updateBook(active.id, (b) => ({
+        brainstorm: b.brainstorm.map((m) => (m.id === id ? { ...m, ...patch } : m)),
+      }));
+    },
+    [active, activeBranchId, branchMessages, persistBranchMessages, updateBook],
+  );
+
   const removeBrainstorm = useCallback((id: string) => {
     if (activeBranchId) {
       const targetId = activeBranchId ?? "main";
@@ -733,6 +643,7 @@ export function useBooks() {
     toggleGoalDone,
     removeGoal,
     updateGoal,
+    acceptGoal,
     // Candidates
     addCandidate,
     clearCandidates,
@@ -753,6 +664,7 @@ export function useBooks() {
     branchMessages,
     // Brainstorm
     addBrainstorm,
+    updateBrainstorm,
     removeBrainstorm,
     hydrated,
     clearBrainstorm,
@@ -760,142 +672,3 @@ export function useBooks() {
 }
 
 export type BooksApi = ReturnType<typeof useBooks>;
-
-export function loreToPrompt(items: LoreItem[]): string {
-  if (!items.length) return "(no lore yet)";
-  const grouped: Record<LoreType, LoreItem[]> = { character: [], place: [], concept: [], faction: [] };
-  items.forEach((i) => grouped[i.type].push(i));
-  const section = (label: string, arr: LoreItem[]) =>
-    arr.length
-      ? `${label}:\n${arr.map((i) => `- ${i.name}${i.role ? ` (${i.role})` : ""}: ${i.description}`).join("\n")}`
-      : "";
-  return [
-    section("Characters", grouped.character),
-    section("Places", grouped.place),
-    section("Factions", grouped.faction),
-    section("Concepts", grouped.concept),
-  ]
-    .filter(Boolean)
-    .join("\n\n");
-}
-
-export function coresToPrompt(cores: Core[]): string {
-  if (!cores?.length) return "";
-  return cores
-    .map(
-      (c, i) =>
-        `## Core ${i + 1}: ${c.title}\n${c.blocks
-          .map((b, j) => `${i + 1}.${j + 1} ${b.title}: ${b.body}`)
-          .join("\n")}`,
-    )
-    .join("\n\n");
-}
-
-/**
- * Build the shared context block sent with every AI request.
- * - Cores are highest priority (always full).
- * - Lore is condensed (name + one-line role/desc).
- * - Chapter text is included only when includeChapter=true.
- * - Brainstorm tail (last N messages) is included when brainstormTail>0.
- */
-export function buildBookContext(
-  book: Book,
-  opts: { includeChapter?: boolean; brainstormTail?: number; brainstormMessages?: BrainstormMessage[] } = {},
-): string {
-  const parts: string[] = [];
-  parts.push(`BOOK: ${book.name}\nCHAPTER: ${book.title}`);
-  if (book.cores.length) parts.push(`WORLD CORES (canonical facts):\n${coresToPrompt(book.cores)}`);
-  if (book.lore.length) parts.push(`LORE:\n${loreToPrompt(book.lore)}`);
-  if (opts.includeChapter && book.content.trim()) {
-    parts.push(`CURRENT CHAPTER TEXT:\n${book.content}`);
-  }
-  const tail = opts.brainstormTail ?? 0;
-  const messages = opts.brainstormMessages ?? book.brainstorm;
-  if (tail > 0 && messages.length) {
-    const recent = messages.slice(-tail);
-    parts.push(
-      `RECENT BRAINSTORM (chronological):\n${recent.map((m) => `${m.role.toUpperCase()}${m.mode ? `(${m.mode})` : ""}: ${m.content}`).join("\n")}`,
-    );
-  }
-  return parts.join("\n\n---\n\n");
-}
-
-/** One-paragraph digest — user-authored overview when present, else auto-built from cores. */
-export function buildOverview(book: Book): string {
-  if (book.overview && book.overview.trim()) return book.overview.trim();
-  if (!book.cores.length) return `${book.name}: no cores yet.`;
-  const bits = book.cores.map((c, i) => {
-    const first = c.blocks[0];
-    const detail = first ? ` — ${first.title}: ${first.body}` : "";
-    return `Core ${i + 1} (${c.title})${detail}`;
-  });
-  const joined = bits.join(" · ");
-  return joined.length > 500 ? joined.slice(0, 497) + "…" : joined;
-}
-
-/** Build a scoped context from selected core / lore IDs. Includes overview + selected only. */
-export function buildSelectiveContext(
-  book: Book,
-  opts: {
-    overview?: boolean;
-    coreIds?: string[];
-    loreIds?: string[];
-    includeChapter?: boolean;
-    brainstormTail?: number;
-    brainstormMessages?: BrainstormMessage[];
-  },
-): string {
-  const parts: string[] = [`BOOK: ${book.name}\nCHAPTER: ${book.title}`];
-  if (opts.overview !== false) parts.push(`OVERVIEW:\n${buildOverview(book)}`);
-  const cores = book.cores.filter((c) => opts.coreIds?.includes(c.id));
-  if (cores.length) parts.push(`SELECTED CORES:\n${coresToPrompt(cores)}`);
-  const lore = book.lore.filter((l) => opts.loreIds?.includes(l.id));
-  if (lore.length) parts.push(`SELECTED LORE:\n${loreToPrompt(lore)}`);
-  if (opts.includeChapter && book.content.trim()) {
-    parts.push(`CURRENT CHAPTER TEXT:\n${book.content}`);
-  }
-  const tail = opts.brainstormTail ?? 0;
-  const messages = opts.brainstormMessages ?? book.brainstorm;
-  if (tail > 0 && messages.length) {
-    const recent = messages.slice(-tail);
-    parts.push(
-      `RECENT BRAINSTORM:\n${recent.map((m) => `${m.role.toUpperCase()}${m.mode ? `(${m.mode})` : ""}: ${m.content}`).join("\n")}`,
-    );
-  }
-  return parts.join("\n\n---\n\n");
-}
-
-/**
- * Jaccard similarity on word sets of name + description.
- * Returns 0.0 (no overlap) to 1.0 (identical).
- */
-export function loreStringSimilarity(a: LoreItem, b: LoreItem): number {
-  const tokenize = (s: string) =>
-    new Set(s.toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter(Boolean));
-  const setA = tokenize(`${a.name} ${a.description}`);
-  const setB = tokenize(`${b.name} ${b.description}`);
-  if (!setA.size && !setB.size) return 1;
-  let intersection = 0;
-  setA.forEach((w) => { if (setB.has(w)) intersection++; });
-  return intersection / (setA.size + setB.size - intersection);
-}
-
-/**
- * Given a candidate LoreItem and the existing lore array, find the most similar
- * existing item. Returns { item, similarity } or null if nothing exceeds the threshold.
- */
-export function findSimilarLore(
-  candidate: LoreItem,
-  existing: LoreItem[],
-  threshold = 0.75,
-): { item: LoreItem; similarity: number } | null {
-  let best: { item: LoreItem; similarity: number } | null = null;
-  for (const item of existing) {
-    if (item.type !== candidate.type) continue; // only compare same type
-    const sim = loreStringSimilarity(candidate, item);
-    if (sim >= threshold && (!best || sim > best.similarity)) {
-      best = { item, similarity: sim };
-    }
-  }
-  return best;
-}

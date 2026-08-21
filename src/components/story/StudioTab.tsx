@@ -206,7 +206,7 @@ export function ProjectHub({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-primary">
-                  Project README
+                  Studio Hub
                 </span>
                 <span className="rounded-full bg-muted px-2 py-0.5 text-[9px] font-mono text-muted-foreground">
                   v{active.chapters.length + 1}.0
